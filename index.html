@@ -1050,6 +1050,44 @@ body{font-family:'Noto Sans',sans-serif;background:linear-gradient(135deg,#1a1a2
   </div>
 </div>
 
+
+<!-- EDIT TRANSACTION OVERLAY -->
+<div class="overlay" id="overlay-edit-txn" onclick="closeOverlay(event,'overlay-edit-txn')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✏️ Transaction Edit Karein</div>
+    <input type="hidden" id="edit-txn-id">
+    <div class="form-group">
+      <label class="form-label">Transaction Type</label>
+      <select class="form-input" id="edit-txn-type">
+        <option value="receivable">💰 You Got (Receivable)</option>
+        <option value="payable">💸 You Gave (Payable)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Amount (₹) *</label>
+      <input class="form-input" id="edit-txn-amount" type="number" placeholder="0" min="0" step="0.01">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Note / Description</label>
+      <input class="form-input" id="edit-txn-note" placeholder="e.g. Goods sold, Payment received">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Date</label>
+      <input class="form-input" id="edit-txn-date" type="date">
+    </div>
+    <div class="form-group">
+      <label class="form-label">⏰ Edit Lock — Is date & time tak edit allowed</label>
+      <input class="form-input" id="edit-txn-deadline" type="datetime-local">
+      <div style="font-size:11px;color:var(--text3);margin-top:4px;">Yeh time set karo — iske baad transaction lock ho jaayega</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeById('overlay-edit-txn')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditTxn()">✅ Update</button>
+    </div>
+  </div>
+</div>
+
 <!-- BUSINESSES -->
 <div class="overlay" id="overlay-businesses" onclick="closeOverlay(event,'overlay-businesses')">
   <div class="modal">
@@ -1785,13 +1823,24 @@ function renderDetailTxns() {
     txnDiv.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text3)"><div style="font-size:48px">📋</div><div style="font-size:15px;font-weight:600;margin-top:8px">No transactions yet</div></div>`;
     return;
   }
-  txnDiv.innerHTML = `<div class="section-title">Transaction History <span style="font-size:10px;font-weight:400;color:var(--text3);">Long press to select</span></div>` + e.txns.map(t => `
-    <div class="txn-item${appState.selectedTxns.has(t.id)?' selected':''}" onclick="toggleTxnSelect(${t.id})"
-      ontouchstart="startTxnLongPress(${t.id})" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()">
-      ${selMode ? `<div class="sel-check">${appState.selectedTxns.has(t.id)?'✓':''}</div>` : ''}
-      <div style="flex:1"><div class="txn-note">${t.note}</div><div class="txn-date">${t.date}</div></div>
-      <div class="amount ${t.type}" style="font-family:'Baloo 2',cursive;font-weight:700">${t.type==='receivable'?'＋':'−'}${fmt(t.amount)}</div>
-    </div>`).join('');
+  txnDiv.innerHTML = `<div class="section-title">Transaction History <span style="font-size:10px;font-weight:400;color:var(--text3);">Long press to select</span></div>` + e.txns.map(t => {
+    const canEdit = !t.editDeadline || new Date() <= new Date(t.editDeadline);
+    return `
+    <div class="txn-item${appState.selectedTxns.has(t.id)?' selected':''}"
+      ontouchstart="startTxnLongPress(${t.id})" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()"
+      oncontextmenu="event.preventDefault();toggleTxnSelect(${t.id})">
+      ${selMode ? `<div class="sel-check" onclick="toggleTxnSelect(${t.id})">${appState.selectedTxns.has(t.id)?'✓':''}</div>` : ''}
+      <div style="flex:1" onclick="${selMode?`toggleTxnSelect(${t.id})`:'void(0)'}">
+        <div class="txn-note">${t.note}</div>
+        <div class="txn-date">${t.date}</div>
+        ${t.editDeadline ? `<div style="font-size:10px;color:${canEdit?'var(--green)':'var(--text3)'}">${canEdit?'✏️ Edit allowed till '+new Date(t.editDeadline).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'🔒 Edit locked'}</div>` : ''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <div class="amount ${t.type}" style="font-family:'Baloo 2',cursive;font-weight:700">${t.type==='receivable'?'＋':'−'}${fmt(t.amount)}</div>
+        ${canEdit ? `<button onclick="openEditTxn(${t.id})" style="background:#dbeafe;color:#1d4ed8;border:none;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;">✏️ Edit</button>` : `<span style="font-size:10px;color:var(--text3)">🔒 Locked</span>`}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 let txnLongPressTimer = null;
@@ -2142,6 +2191,83 @@ function doChangePassword() {
     showToast('❌ Kuch problem aayi, dobara try karein.');
   }
 }
+
+
+// ===== EDIT TRANSACTION =====
+function openEditTxn(txnId) {
+  const e = appState.currentDetail;
+  if (!e) return;
+  const t = e.txns.find(tx => tx.id === txnId);
+  if (!t) return;
+
+  // Check edit deadline
+  if (t.editDeadline && new Date() > new Date(t.editDeadline)) {
+    showToast('🔒 Is transaction ki edit deadline khatam ho gayi!');
+    return;
+  }
+
+  document.getElementById('edit-txn-id').value = txnId;
+  document.getElementById('edit-txn-type').value = t.type || 'receivable';
+  document.getElementById('edit-txn-amount').value = t.amount || '';
+  document.getElementById('edit-txn-note').value = t.note || '';
+
+  // Parse date for input
+  try {
+    const d = new Date(t.date);
+    if (!isNaN(d)) {
+      document.getElementById('edit-txn-date').value = d.toISOString().split('T')[0];
+    } else {
+      document.getElementById('edit-txn-date').value = new Date().toISOString().split('T')[0];
+    }
+  } catch(err) {
+    document.getElementById('edit-txn-date').value = new Date().toISOString().split('T')[0];
+  }
+
+  // Default deadline: 24 hours from now if not set
+  const dl = t.editDeadline || new Date(Date.now() + 24*60*60*1000).toISOString().slice(0,16);
+  document.getElementById('edit-txn-deadline').value = dl;
+
+  openOverlay('overlay-edit-txn');
+}
+
+function saveEditTxn() {
+  const e = appState.currentDetail;
+  if (!e) return;
+  const txnId = parseInt(document.getElementById('edit-txn-id').value);
+  const t = e.txns.find(tx => tx.id === txnId);
+  if (!t) return;
+
+  // Check deadline again
+  if (t.editDeadline && new Date() > new Date(t.editDeadline)) {
+    showToast('🔒 Edit deadline khatam ho gayi!');
+    return;
+  }
+
+  const amt = parseFloat(document.getElementById('edit-txn-amount').value);
+  if (!amt || amt <= 0) { showToast('⚠️ Sahi amount dalein!'); return; }
+
+  const dateVal = document.getElementById('edit-txn-date').value;
+  const formattedDate = dateVal ? new Date(dateVal).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) : t.date;
+
+  // Update transaction
+  t.type = document.getElementById('edit-txn-type').value;
+  t.amount = amt;
+  t.note = document.getElementById('edit-txn-note').value || 'Transaction';
+  t.date = formattedDate;
+  t.editDeadline = document.getElementById('edit-txn-deadline').value;
+  t.editedAt = new Date().toLocaleString('en-IN');
+
+  // Recalculate balance
+  recalcBalance(e);
+
+  closeById('overlay-edit-txn');
+  renderDetailTxns();
+  renderEntries();
+  renderBalances();
+  if (typeof fbSave === 'function') { fbSave(); window._justSaved = Date.now(); }
+  showToast('✅ Transaction update ho gayi!');
+}
+
 
 function openEditEmployee(id) {
   const emp = cd().employees.find(e=>e.id===id);
