@@ -482,6 +482,13 @@ body{font-family:'Noto Sans',sans-serif;background:linear-gradient(135deg,#1a1a2
       <div class="cb-block"><div class="cb-val" id="cb-out">₹0</div><div class="cb-lbl">Cash Out</div></div>
       <div class="cb-block"><div class="cb-val" id="cb-bal">₹0</div><div class="cb-lbl">Balance</div></div>
     </div>
+    <div style="display:flex;gap:6px;padding:4px 0 8px;overflow-x:auto;" id="cb-filters">
+      <div onclick="filterCashbook('all')" id="cbf-all" style="background:var(--primary);color:white;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">All</div>
+      <div onclick="filterCashbook('in')" id="cbf-in" style="background:var(--surface);color:var(--text2);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">💰 Cash In</div>
+      <div onclick="filterCashbook('out')" id="cbf-out" style="background:var(--surface);color:var(--text2);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">💸 Cash Out</div>
+      <div onclick="filterCashbook('today')" id="cbf-today" style="background:var(--surface);color:var(--text2);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">📅 Today</div>
+      <div onclick="filterCashbook('week')" id="cbf-week" style="background:var(--surface);color:var(--text2);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">📅 This Week</div>
+    </div>
     <div class="section-title">Recent Entries</div>
     <div id="cashbook-list"></div>
   </div>
@@ -503,6 +510,12 @@ body{font-family:'Noto Sans',sans-serif;background:linear-gradient(135deg,#1a1a2
       <button class="sel-action" onclick="selectAllInventory()">All</button>
       <button class="sel-action" onclick="shareSelectedItems()">📄 PDF/Share</button>
       <button class="sel-action" onclick="clearInvSelection()">✕</button>
+    </div>
+    <div style="display:flex;gap:6px;padding:4px 0 8px;overflow-x:auto;">
+      <div onclick="filterInventoryStock('all')" style="background:var(--primary);color:white;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;" id="invf-all">All</div>
+      <div onclick="filterInventoryStock('low')" style="background:var(--surface);color:var(--text2);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">⚠️ Low Stock</div>
+      <div onclick="filterInventoryStock('out')" style="background:var(--surface);color:var(--text2);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">❌ Out of Stock</div>
+      <div onclick="filterInventoryStock('available')" style="background:var(--surface);color:var(--text2);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">✅ In Stock</div>
     </div>
     <div class="section-title">All Items</div>
     <div id="inventory-list"></div>
@@ -545,6 +558,11 @@ body{font-family:'Noto Sans',sans-serif;background:linear-gradient(135deg,#1a1a2
       <div class="cb-block"><div class="cb-val" id="pr-count">0</div><div class="cb-lbl">Employees</div></div>
       <div class="cb-block"><div class="cb-val" id="pr-total">₹0</div><div class="cb-lbl">Total Salary</div></div>
       <div class="cb-block"><div class="cb-val" id="pr-paid">0</div><div class="cb-lbl">Paid</div></div>
+    </div>
+    <div style="display:flex;gap:6px;padding:4px 0 8px;overflow-x:auto;">
+      <div onclick="filterPayroll('all')" id="prf-all" style="background:var(--primary);color:white;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">All</div>
+      <div onclick="filterPayroll('paid')" id="prf-paid" style="background:var(--surface);color:var(--text2);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">✅ Paid</div>
+      <div onclick="filterPayroll('unpaid')" id="prf-unpaid" style="background:var(--surface);color:var(--text2);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">⏳ Unpaid</div>
     </div>
     <div class="section-title">Employee List</div>
     <div id="payroll-list"></div>
@@ -1729,6 +1747,83 @@ function renderAll() {
   populateSaleCustomers();
   updateMoreBizName();
 }
+
+// Get current logged-in user name for entry tracking
+function currentUserName() {
+  const u = appState.loggedInUser;
+  if (!u) return 'Admin';
+  return u.name || 'Admin';
+}
+
+
+// ===== FILTER FUNCTIONS =====
+
+// Home screen - filter by staff
+let homeStaffFilter = 'All';
+function renderHomeStaffFilters() {
+  const emps = cd().employees || [];
+  const names = ['All', ...new Set(emps.map(e => e.name))];
+  const el = document.getElementById('home-staff-filters');
+  if (!el) return;
+  el.innerHTML = names.map(n =>
+    `<div onclick="setHomeStaffFilter('${n}')" style="background:${homeStaffFilter===n?'var(--primary)':'var(--surface)'};color:${homeStaffFilter===n?'white':'var(--text2)'};border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;">👤 ${n}</div>`
+  ).join('');
+}
+function setHomeStaffFilter(name) {
+  homeStaffFilter = name;
+  renderHomeStaffFilters();
+  renderEntries();
+}
+
+// Cashbook filter
+let cbFilter = 'all';
+function filterCashbook(type) {
+  cbFilter = type;
+  ['all','in','out','today','week'].forEach(t => {
+    const el = document.getElementById('cbf-'+t);
+    if (el) {
+      el.style.background = t===type ? 'var(--primary)' : 'var(--surface)';
+      el.style.color = t===type ? 'white' : 'var(--text2)';
+    }
+  });
+  renderCashbook();
+}
+
+// Inventory stock filter
+let invStockFilter = 'all';
+function filterInventoryStock(type) {
+  invStockFilter = type;
+  ['all','low','out','available'].forEach(t => {
+    const el = document.getElementById('invf-'+t);
+    if (el) {
+      el.style.background = t===type ? 'var(--primary)' : 'var(--surface)';
+      el.style.color = t===type ? 'white' : 'var(--text2)';
+    }
+  });
+  renderInventory();
+}
+
+// Payroll filter
+let payrollFilter = 'all';
+function filterPayroll(type) {
+  payrollFilter = type;
+  ['all','paid','unpaid'].forEach(t => {
+    const el = document.getElementById('prf-'+t);
+    if (el) {
+      el.style.background = t===type ? 'var(--primary)' : 'var(--surface)';
+      el.style.color = t===type ? 'white' : 'var(--text2)';
+    }
+  });
+  renderPayroll();
+}
+
+// Transaction detail filter
+function filterDetailTxns(type) {
+  appState.txnFilter = type;
+  renderDetailTxns();
+}
+
+
 function saveAll() {
   saveLocalData();
   if (typeof fbSave === 'function') { fbSave(); window._justSaved = Date.now(); }
@@ -1764,7 +1859,11 @@ function renderBalances() {
 function renderEntries() {
   const list = document.getElementById('entryList');
   const all = cd().entries;
-  const filtered = appState.currentTab === 'all' ? all : all.filter(e => e.type === appState.currentTab);
+  let filtered = appState.currentTab === 'all' ? all : all.filter(e => e.type === appState.currentTab);
+  if (homeStaffFilter && homeStaffFilter !== 'All') {
+    filtered = filtered.filter(e => e.addedBy === homeStaffFilter);
+  }
+  renderHomeStaffFilters();
   const selMode = appState.selectedEntries.size > 0;
   list.innerHTML = filtered.map(e => `
     <div class="entry-card${appState.selectedEntries.has(e.id)?' selected':''}"
@@ -1783,8 +1882,11 @@ function renderEntries() {
         <div class="entry-type">${e.type.charAt(0).toUpperCase()+e.type.slice(1)}</div>
       </div>
       <div class="entry-amount">
-        <div class="amount ${e.balType}${appState.balanceHidden?' hidden':''}">${fmt(e.balance)}</div>
-        <div class="kind ${e.balType}">${e.balType}</div>
+        <div style="text-align:right">
+          <div class="amount ${e.balType}${appState.balanceHidden?' hidden':''}">${fmt(e.balance)}</div>
+          <div class="kind ${e.balType}">${e.balType}</div>
+          ${e.addedBy ? `<div style="font-size:9px;color:var(--text3);margin-top:1px;">👤 ${e.addedBy}</div>` : ''}
+        </div>
       </div>
     </div>`).join('');
   updateSelBar();
@@ -1909,13 +2011,20 @@ function renderDetailTxns() {
   const e = appState.currentDetail;
   const txnDiv = document.getElementById('detail-txns');
   const selMode = appState.selectedTxns.size > 0;
+  const txnFilterType = appState.txnFilter || 'All';
+  const filteredTxns = txnFilterType === 'All' ? e.txns : e.txns.filter(t => t.type === txnFilterType);
   document.getElementById('detail-sel-bar').classList.toggle('visible', selMode);
   document.getElementById('detail-sel-count').textContent = appState.selectedTxns.size + ' selected';
   if (!e.txns.length) {
     txnDiv.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text3)"><div style="font-size:48px">📋</div><div style="font-size:15px;font-weight:600;margin-top:8px">No transactions yet</div></div>`;
     return;
   }
-  txnDiv.innerHTML = `<div class="section-title">Transaction History <span style="font-size:10px;font-weight:400;color:var(--text3);">Long press to select</span></div>` + e.txns.map(t => {
+  // Build transaction filter bar
+  const allTypes = ['All', 'receivable', 'payable'];
+  const filterBar = `<div style="display:flex;gap:6px;padding:0 0 8px;overflow-x:auto;">
+    ${allTypes.map(t => `<div onclick="filterDetailTxns('${t}')" id="dtf-${t}" style="background:${(appState.txnFilter||'All')===t?'var(--primary)':'var(--surface)'};color:${(appState.txnFilter||'All')===t?'white':'var(--text2)'};border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">${t==='receivable'?'💰 Got':t==='payable'?'💸 Gave':'All'}</div>`).join('')}
+  </div>`;
+  txnDiv.innerHTML = filterBar + `<div class="section-title">Transaction History <span style="font-size:10px;font-weight:400;color:var(--text3);">Long press to select</span></div>` + filteredTxns.map(t => {
     const canEdit = !t.editDeadline || new Date() <= new Date(t.editDeadline);
     return `
     <div class="txn-item${appState.selectedTxns.has(t.id)?' selected':''}"
@@ -1924,7 +2033,7 @@ function renderDetailTxns() {
       ${selMode ? `<div class="sel-check" onclick="toggleTxnSelect(${t.id})">${appState.selectedTxns.has(t.id)?'✓':''}</div>` : ''}
       <div style="flex:1" onclick="${selMode?`toggleTxnSelect(${t.id})`:'void(0)'}">
         <div class="txn-note">${t.note}</div>
-        <div class="txn-date">${t.date}</div>
+        <div class="txn-date">${t.date}${t.addedBy ? ' • 👤 '+t.addedBy : ''}</div>
         ${t.editDeadline ? `<div style="font-size:10px;color:${canEdit?'var(--green)':'var(--text3)'}">${canEdit?'✏️ Edit allowed till '+new Date(t.editDeadline).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'🔒 Edit locked'}</div>` : ''}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
@@ -1989,7 +2098,17 @@ function deleteCurrentEntry() {
 
 // ===== CASHBOOK =====
 function renderCashbook() {
-  const cb = cd().cashbook;
+  let cb = cd().cashbook;
+  if (cbFilter === 'in') cb = cb.filter(e => e.type === 'in');
+  else if (cbFilter === 'out') cb = cb.filter(e => e.type === 'out');
+  else if (cbFilter === 'today') {
+    const today = new Date().toDateString();
+    cb = cb.filter(e => { try { return new Date(e.date).toDateString()===today; } catch(x){ return e.date&&e.date.includes(new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short'})); } });
+  }
+  else if (cbFilter === 'week') {
+    const weekAgo = Date.now() - 7*24*60*60*1000;
+    cb = cb.filter(e => { try { return new Date(e.date).getTime() >= weekAgo; } catch(x){ return true; } });
+  }
   let inTotal = cb.filter(e=>e.type==='in').reduce((s,e)=>s+e.amount,0);
   let outTotal = cb.filter(e=>e.type==='out').reduce((s,e)=>s+e.amount,0);
   document.getElementById('cb-in').textContent = fmt(inTotal);
@@ -1997,14 +2116,17 @@ function renderCashbook() {
   document.getElementById('cb-bal').textContent = fmt(inTotal - outTotal);
   document.getElementById('cashbook-list').innerHTML = cb.map(e => `
     <div class="txn-item">
-      <div style="flex:1"><div class="txn-note">${e.note}</div><div class="txn-date">${e.date}</div></div>
+      <div style="flex:1"><div class="txn-note">${e.note}</div><div class="txn-date">${e.date}${e.addedBy?' • 👤 '+e.addedBy:''}</div></div>
       <div class="amount ${e.type==='in'?'receivable':'payable'}" style="font-family:'Baloo 2',cursive;font-weight:700">${e.type==='in'?'＋':'−'}${fmt(e.amount)}</div>
     </div>`).join('');
 }
 
 // ===== INVENTORY =====
 function renderInventory(filter='') {
-  const items = cd().inventoryItems.filter(i => !filter || i.name.toLowerCase().includes(filter.toLowerCase())||i.category.toLowerCase().includes(filter.toLowerCase()));
+  let items = cd().inventoryItems.filter(i => !filter || i.name.toLowerCase().includes(filter.toLowerCase())||i.category.toLowerCase().includes(filter.toLowerCase()));
+  if (invStockFilter === 'low') items = items.filter(i => i.stock > 0 && i.stock < 5);
+  else if (invStockFilter === 'out') items = items.filter(i => i.stock === 0);
+  else if (invStockFilter === 'available') items = items.filter(i => i.stock > 0);
   const total = items.length;
   const low = items.filter(i=>i.stock>0&&i.stock<5).length;
   const out = items.filter(i=>i.stock===0).length;
@@ -2169,7 +2291,9 @@ function shareInvoiceById(id) { previewInvoice(id); setTimeout(()=>{ showToast('
 
 // ===== PAYROLL =====
 function renderPayroll() {
-  const emps = cd().employees;
+  let emps = cd().employees;
+  if (payrollFilter === 'paid') emps = emps.filter(e => e.paid);
+  else if (payrollFilter === 'unpaid') emps = emps.filter(e => !e.paid);
   document.getElementById('pr-count').textContent = emps.length;
   document.getElementById('pr-total').textContent = fmt(emps.reduce((s,e)=>s+e.salary,0));
   document.getElementById('pr-paid').textContent = emps.filter(e=>e.paid).length;
@@ -2440,7 +2564,7 @@ function renderExpenses(filter='All') {
   document.getElementById('expense-list').innerHTML = shown.map(e => `
     <div class="inv-item">
       <div class="inv-row">
-        <div><div class="exp-category">${e.category}</div><div style="font-weight:700;font-size:14px">${e.desc}</div><div style="font-size:12px;color:var(--text2)">${e.date}</div></div>
+        <div><div class="exp-category">${e.category}</div><div style="font-weight:700;font-size:14px">${e.desc}</div><div style="font-size:12px;color:var(--text2)">${e.date}${e.addedBy?' • 👤 '+e.addedBy:''}</div></div>
         <div style="font-family:'Baloo 2',cursive;font-weight:800;font-size:16px;color:var(--red)">−${fmt(e.amount)}</div>
       </div>
     </div>`).join('');
@@ -2841,12 +2965,12 @@ function saveCustomer() {
   if (!name) { document.getElementById('new-name').focus(); return; }
   const bal = parseFloat(document.getElementById('new-balance').value) || 0;
   const entry = {
-    id: Date.now(), name, type: appState.selectedType,
+    id: Date.now(), name, addedBy: currentUserName(), type: appState.selectedType,
     balance: bal, balType: appState.selectedBalType,
     phone: document.getElementById('new-phone').value || 'N/A',
     email: document.getElementById('new-email').value || '',
     address: document.getElementById('new-address').value || '',
-    date: fmtDateTimeNow(), photo: newPhotoData, txns: []
+    date: fmtDateTimeNow(), photo: newPhotoData, txns: [], addedBy: currentUserName()
   };
   cd().entries.unshift(entry);
   renderEntries(); renderBalances(); renderBalanceSummary(); populateSaleCustomers();
@@ -2887,7 +3011,7 @@ function saveTxn() {
     ? new Date(dateInput).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true})
     : fmtDateTimeNow();
   const type = appState.selectedTxnType === 'got' ? 'receivable' : 'payable';
-  const txn = { id: Date.now(), note, date, amount: amt, type };
+  const txn = { id: Date.now(), note, date, amount: amt, type, addedBy: currentUserName() };
   if (appState.currentDetail) {
     appState.currentDetail.txns.unshift(txn);
     // balance will be recalculated below from txns
@@ -2933,7 +3057,7 @@ function saveExpense() {
   const desc = document.getElementById('exp-desc').value.trim();
   if (!amt || !desc) { showToast('⚠️ Fill required fields!'); return; }
   cd().expenses.unshift({
-    id: Date.now(), desc, amount: amt,
+    id: Date.now(), desc, amount: amt, addedBy: currentUserName(),
     category: document.getElementById('exp-cat').value,
     date: document.getElementById('exp-date-input').value ? new Date(document.getElementById('exp-date-input').value).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : fmtDateTimeNow()
   });
@@ -2951,7 +3075,7 @@ function saveEmployee() {
   const empPass = document.getElementById('emp-password').value.trim();
   if (!empPass) { showToast('⚠️ Staff ka login password zaroor dalein!'); return; }
   cd().employees.push({
-    id: Date.now(), name, phone,
+    id: Date.now(), name, phone, addedBy: currentUserName(),
     role: document.getElementById('emp-role').value || 'Staff',
     salary: parseInt(document.getElementById('emp-salary').value)||0,
     password: empPass,
