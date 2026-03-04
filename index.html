@@ -880,7 +880,7 @@ body{font-family:'Noto Sans',sans-serif;background:linear-gradient(135deg,#1a1a2
     <div class="modal-title">💳 Add Transaction</div>
     <div class="form-group"><label class="form-label">Amount (₹) *</label><input class="form-input" id="txn-amount" placeholder="0.00" type="number"></div>
     <div class="form-group"><label class="form-label">Note</label><input class="form-input" id="txn-note" placeholder="e.g. Goods sold, Payment received…"></div>
-    <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="txn-date" type="date"></div>
+    <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="txn-date" type="datetime-local"></div>
     <div class="form-group"><label class="form-label">Type</label>
       <div class="radio-group">
         <div class="radio-btn selected-r" id="txn-got" onclick="selectTxnType('got')">💰 You Got</div>
@@ -1074,7 +1074,7 @@ body{font-family:'Noto Sans',sans-serif;background:linear-gradient(135deg,#1a1a2
     </div>
     <div class="form-group">
       <label class="form-label">Date</label>
-      <input class="form-input" id="edit-txn-date" type="date">
+      <input class="form-input" id="edit-txn-date" type="datetime-local">
     </div>
     <div class="form-group">
       <label class="form-label">⏰ Edit Lock — Is date & time tak edit allowed</label>
@@ -1485,6 +1485,9 @@ function cd() { return allData[appState.currentBizId]; }
 
 // ===== LOGIN SYSTEM =====
 function doLogin() {
+  // Reload localStorage data fresh before checking (fixes same-device staff login)
+  loadLocalData();
+
   const phone = document.getElementById('login-phone').value.trim().replace(/\s+/g,'');
   const pass = document.getElementById('login-pass').value;
   const prompt = document.getElementById('pin-prompt');
@@ -1729,6 +1732,8 @@ function renderAll() {
 function saveAll() {
   saveLocalData();
   if (typeof fbSave === 'function') { fbSave(); window._justSaved = Date.now(); }
+  // Auto refresh UI
+  autoRefresh();
 }
 
 // ===== HELPERS =====
@@ -1736,6 +1741,14 @@ function getColor(name) { return COLORS[name.charCodeAt(0) % COLORS.length]; }
 function fmt(n) { return '₹' + Number(n).toLocaleString('en-IN'); }
 function fmtN(n) { return Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtDate() { return new Date().toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'2-digit',hour:'2-digit',minute:'2-digit'}); }
+function fmtDateTime(d) {
+  const dt = d ? new Date(d) : new Date();
+  if (isNaN(dt)) return d || '';
+  return dt.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});
+}
+function fmtDateTimeNow() {
+  return new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});
+}
 
 function renderBalances() {
   let pay = 0, rec = 0;
@@ -2327,7 +2340,9 @@ function saveEditTxn() {
   if (!amt || amt <= 0) { showToast('⚠️ Sahi amount dalein!'); return; }
 
   const dateVal = document.getElementById('edit-txn-date').value;
-  const formattedDate = dateVal ? new Date(dateVal).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) : t.date;
+  const formattedDate = dateVal
+    ? new Date(dateVal).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true})
+    : t.date;
 
   // Update transaction
   t.type = document.getElementById('edit-txn-type').value;
@@ -2831,7 +2846,7 @@ function saveCustomer() {
     phone: document.getElementById('new-phone').value || 'N/A',
     email: document.getElementById('new-email').value || '',
     address: document.getElementById('new-address').value || '',
-    date: fmtDate(), photo: newPhotoData, txns: []
+    date: fmtDateTimeNow(), photo: newPhotoData, txns: []
   };
   cd().entries.unshift(entry);
   renderEntries(); renderBalances(); renderBalanceSummary(); populateSaleCustomers();
@@ -2866,7 +2881,11 @@ function saveTxn() {
   const amt = parseFloat(document.getElementById('txn-amount').value);
   if (!amt) { showToast('⚠️ Enter an amount!'); return; }
   const note = document.getElementById('txn-note').value || 'Transaction';
-  const date = document.getElementById('txn-date').value || new Date().toLocaleDateString('en-IN');
+  // Date with time
+  const dateInput = document.getElementById('txn-date').value;
+  const date = dateInput
+    ? new Date(dateInput).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true})
+    : fmtDateTimeNow();
   const type = appState.selectedTxnType === 'got' ? 'receivable' : 'payable';
   const txn = { id: Date.now(), note, date, amount: amt, type };
   if (appState.currentDetail) {
@@ -2916,7 +2935,7 @@ function saveExpense() {
   cd().expenses.unshift({
     id: Date.now(), desc, amount: amt,
     category: document.getElementById('exp-cat').value,
-    date: document.getElementById('exp-date-input').value || new Date().toLocaleDateString('en-IN')
+    date: document.getElementById('exp-date-input').value ? new Date(document.getElementById('exp-date-input').value).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : fmtDateTimeNow()
   });
   ['exp-amount','exp-desc','exp-date-input'].forEach(id => document.getElementById(id).value='');
   closeById('overlay-add-expense');
@@ -3100,8 +3119,24 @@ function doRefresh() {
   const btn = document.getElementById('refreshBtn');
   btn.classList.add('spinning');
   appState.lastRefresh = new Date();
+  // Also sync from Firebase
+  if (typeof fbLoad === 'function') {
+    fbLoad();
+  } else {
+    renderAll();
+  }
+  setTimeout(()=>{ btn.classList.remove('spinning'); }, 800);
+}
+
+// Auto refresh after every action - silent (no toast)
+function autoRefresh() {
+  const btn = document.getElementById('refreshBtn');
+  if (btn) {
+    btn.classList.add('spinning');
+    setTimeout(()=>btn.classList.remove('spinning'), 600);
+  }
   renderAll();
-  setTimeout(()=>{ btn.classList.remove('spinning'); showToast('🔄 Refreshed! '+new Date().toLocaleTimeString('en-IN')); }, 800);
+  renderBalances();
 }
 
 // ===== SEARCH =====
