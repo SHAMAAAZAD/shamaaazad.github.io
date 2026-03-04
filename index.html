@@ -1471,43 +1471,12 @@ let businesses = [
 
 let allData = {
   biz1: {
-    entries: [
-      { id:1, name:'Rahul Sharma', type:'customer', balance:3500, balType:'receivable', phone:'+91 98765 43210', date:'Tue, 17 Feb 26 • 12:44 AM', photo:'', address:'Delhi',
-        txns:[{id:101,note:'Goods Sold',date:'17 Feb',amount:5000,type:'receivable'},{id:102,note:'Payment Received',date:'10 Feb',amount:1500,type:'payable'}]},
-      { id:2, name:'Priya Mehta', type:'customer', balance:1250, balType:'receivable', phone:'+91 98111 22333', date:'Mon, 16 Feb 26 • 9:00 AM', photo:'', address:'Mumbai', txns:[]},
-      { id:3, name:'Ram Suppliers', type:'supplier', balance:2400, balType:'payable', phone:'+91 80555 66777', date:'Sun, 15 Feb 26 • 2:30 PM', photo:'', address:'Pune', txns:[]},
-      { id:4, name:'SBI Business', type:'bank', balance:52000, balType:'receivable', phone:'N/A', date:'Sat, 14 Feb 26 • 10:00 AM', photo:'', address:'', txns:[]},
-      { id:5, name:'Amit Kumar', type:'customer', balance:850, balType:'receivable', phone:'+91 70000 12345', date:'Fri, 13 Feb 26 • 4:15 PM', photo:'', address:'Noida', txns:[]},
-    ],
-    inventoryItems: [
-      { id:201, name:'A4 Paper Ream', category:'Paper', price:350, stock:45, photo:'' },
-      { id:202, name:'Ball Pen (Blue)', category:'Pens', price:8, stock:3, photo:'' },
-      { id:203, name:'Stapler', category:'Office', price:120, stock:12, photo:'' },
-      { id:204, name:'Highlighter Set', category:'Markers', price:95, stock:0, photo:'' },
-      { id:205, name:'Sticky Notes', category:'Paper', price:40, stock:28, photo:'' },
-    ],
-    invoices: [
-      { id:'INV-001', customer:'Rahul Sharma', date:'Feb 17, 2026', amount:5000, status:'paid', items:[{name:'A4 Paper Ream',qty:10,price:350},{name:'Stapler',qty:5,price:120}] },
-      { id:'INV-002', customer:'Priya Mehta', date:'Feb 15, 2026', amount:1250, status:'unpaid', items:[{name:'Highlighter Set',qty:5,price:95},{name:'Sticky Notes',qty:10,price:75}] },
-      { id:'INV-003', customer:'Amit Kumar', date:'Feb 13, 2026', amount:4500, status:'paid', items:[{name:'A4 Paper Ream',qty:8,price:350},{name:'Ball Pen',qty:50,price:8},{name:'Stapler',qty:10,price:120}] },
-    ],
-    cashbook: [
-      { id:301, note:'Sales Collection', date:'Today, 10:30 AM', amount:3500, type:'in' },
-      { id:302, note:'Electricity Bill', date:'Yesterday, 6:00 PM', amount:1200, type:'out' },
-      { id:303, note:'Supplier Payment', date:'Feb 27, 2:00 PM', amount:4500, type:'out' },
-      { id:304, note:'Customer Receipt', date:'Feb 26, 11:00 AM', amount:2200, type:'in' },
-    ],
-    employees: [
-      { id:401, name:'Ravi Gupta', role:'Sales Manager', salary:18000, paid:true, phone:'+91 91111 11111', photo:'' },
-      { id:402, name:'Sunita Devi', role:'Cashier', salary:12000, paid:true, phone:'+91 92222 22222', photo:'' },
-      { id:403, name:'Mohan Lal', role:'Store Keeper', salary:10000, paid:false, phone:'+91 93333 33333', photo:'' },
-    ],
-    expenses: [
-      { id:501, desc:'Electricity Bill', category:'Utilities', amount:1200, date:'Feb 28' },
-      { id:502, desc:'Rent', category:'Rent', amount:5000, date:'Mar 01' },
-      { id:503, desc:'Auto Fare', category:'Transport', amount:350, date:'Feb 25' },
-      { id:504, desc:'Printer Paper', category:'Office Supplies', amount:700, date:'Feb 20' },
-    ]
+    entries: [],
+    inventoryItems: [],
+    invoices: [],
+    cashbook: [],
+    employees: [],
+    expenses: []
   }
 };
 
