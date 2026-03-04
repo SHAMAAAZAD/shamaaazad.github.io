@@ -1628,14 +1628,66 @@ function resetPin() {
 function init() {
   document.getElementById('home-date').textContent = new Date().toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'2-digit'});
   document.getElementById('appLockToggle').classList.toggle('on', appState.pinEnabled);
-  loadShopProfile(); // Load saved shop profile
+  loadShopProfile();
+
+  // STEP 1: Pehle localStorage se load karo (instant, offline bhi kaam kare)
+  loadLocalData();
+
   renderAll();
-  // Always show login screen on start
+
+  // Show login screen
   var loginScreen = document.getElementById('pin-screen');
   if (loginScreen) {
     loginScreen.classList.remove('hidden');
     loginScreen.style.display = 'flex';
   }
+
+  // STEP 2: Firebase se sync karo (internet ho to)
+  if (typeof fbLoad === 'function') {
+    fbLoad();
+    fbListen();
+  }
+}
+
+// Save data to localStorage (instant backup)
+function saveLocalData() {
+  try {
+    const payload = {
+      allData: allData,
+      userAccounts: userAccounts,
+      savedAt: Date.now()
+    };
+    localStorage.setItem('sk_data_v6', JSON.stringify(payload));
+  } catch(e) { console.log('localStorage save error:', e); }
+}
+
+// Load data from localStorage
+function loadLocalData() {
+  try {
+    const saved = localStorage.getItem('sk_data_v6');
+    if (saved) {
+      const payload = JSON.parse(saved);
+      if (payload && payload.allData) {
+        // Merge saved data - don't override with demo data
+        Object.keys(payload.allData).forEach(bizId => {
+          if (allData[bizId]) {
+            const sd = payload.allData[bizId];
+            // Only load if saved data has entries (user has actually used app)
+            if (sd.entries && sd.entries.length > 0) allData[bizId].entries = sd.entries;
+            if (sd.inventoryItems) allData[bizId].inventoryItems = sd.inventoryItems;
+            if (sd.invoices) allData[bizId].invoices = sd.invoices;
+            if (sd.cashbook) allData[bizId].cashbook = sd.cashbook;
+            if (sd.employees) allData[bizId].employees = sd.employees;
+            if (sd.expenses) allData[bizId].expenses = sd.expenses;
+          }
+        });
+        if (payload.userAccounts && payload.userAccounts.length > 0) {
+          userAccounts = payload.userAccounts;
+        }
+        console.log('Local data loaded from', new Date(payload.savedAt).toLocaleString());
+      }
+    }
+  } catch(e) { console.log('localStorage load error:', e); }
 }
 
 function renderAll() {
@@ -2264,7 +2316,7 @@ function saveEditTxn() {
   renderDetailTxns();
   renderEntries();
   renderBalances();
-  if (typeof fbSave === 'function') { fbSave(); window._justSaved = Date.now(); }
+  saveLocalData(); if (typeof fbSave === 'function') { fbSave(); window._justSaved = Date.now(); }
   showToast('✅ Transaction update ho gayi!');
 }
 
