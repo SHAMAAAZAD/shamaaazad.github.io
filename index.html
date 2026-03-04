@@ -1497,7 +1497,11 @@ function doLogin() {
   // Check admin first
   let matchedUser = null;
   for (let u of userAccounts) {
-    if (u.phone === phone && u.password === pass) {
+    const uPhone10 = (u.phone || '').replace(/[^0-9]/g,'').slice(-10);
+    const inPhone10 = (phone || '').replace(/[^0-9]/g,'').slice(-10);
+    const uPass = (u.password || '').trim();
+    const inPass = (pass || '').trim();
+    if (uPhone10 === inPhone10 && uPass === inPass) {
       matchedUser = u; break;
     }
   }
@@ -1508,7 +1512,9 @@ function doLogin() {
       for (let emp of (biz.employees || [])) {
         const empPhone = (emp.phone || '').replace(/[^0-9]/g,'').slice(-10);
         const inputPhone = phone.replace(/[^0-9]/g,'').slice(-10);
-        if (empPhone === inputPhone && emp.password === pass) {
+        const empPass = (emp.password || '').trim();
+        const inputPass = (pass || '').trim();
+        if (empPhone === inputPhone && empPass === inputPass) {
           matchedUser = { phone, password: pass, name: emp.name, role: 'staff', rights: emp.rights || {} };
           break;
         }
@@ -1526,6 +1532,53 @@ function doLogin() {
     prompt.style.color = '';
     applyUserRights(matchedUser);
     showToast('🔓 Welcome, ' + matchedUser.name + '!');
+  } else if (typeof db !== 'undefined') {
+    // Staff local mein nahi mila — Firebase se live check karo
+    prompt.textContent = '🔄 Checking...';
+    prompt.style.color = '#fbbf24';
+    db.ref('shopkeeper/data').once('value').then(function(snap) {
+      const d = snap.val();
+      let fbMatch = null;
+      if (d && d.allData) {
+        const inp10 = phone.replace(/[^0-9]/g,'').slice(-10);
+        for (const biz of Object.values(d.allData)) {
+          for (const emp of (biz.employees || [])) {
+            const ep = (emp.phone||'').replace(/[^0-9]/g,'').slice(-10);
+            const fpas = (emp.password||'').trim();
+            const ipas = (pass||'').trim();
+            if (ep === inp10 && fpas === ipas) {
+              fbMatch = { phone, password: pass, name: emp.name, role: 'staff', rights: emp.rights || {} };
+              // Update local allData with Firebase data
+              Object.keys(d.allData).forEach(bizId => {
+                if (allData[bizId]) Object.assign(allData[bizId], d.allData[bizId]);
+              });
+              if (d.userAccounts) userAccounts = d.userAccounts;
+              break;
+            }
+          }
+          if (fbMatch) break;
+        }
+      }
+      if (fbMatch) {
+        appState.loggedInUser = fbMatch;
+        document.getElementById('pin-screen').classList.add('hidden');
+        document.getElementById('login-phone').value = '';
+        document.getElementById('login-pass').value = '';
+        prompt.textContent = 'Apna Phone Number aur Password dalein';
+        prompt.style.color = '';
+        applyUserRights(fbMatch);
+        renderAll();
+        showToast('🔓 Welcome, ' + fbMatch.name + '!');
+      } else {
+        prompt.textContent = '❌ Phone ya Password galat hai!';
+        prompt.style.color = '#ef4444';
+        document.getElementById('login-pass').value = '';
+      }
+    }).catch(function() {
+      prompt.textContent = '❌ Phone ya Password galat hai!';
+      prompt.style.color = '#ef4444';
+      document.getElementById('login-pass').value = '';
+    });
   } else {
     prompt.textContent = '❌ Phone ya Password galat hai!';
     prompt.style.color = '#ef4444';
@@ -1568,6 +1621,7 @@ function applyUserRights(user) {
 }
 
 function lockApp() {
+  saveAll(); // Save before logout
   appState.loggedInUser = null;
   const pinScreen = document.getElementById('pin-screen');
   pinScreen.classList.remove('hidden');
@@ -1637,12 +1691,11 @@ function loadLocalData() {
     if (saved) {
       const payload = JSON.parse(saved);
       if (payload && payload.allData) {
-        // Merge saved data - don't override with demo data
+        // Load ALL saved data unconditionally
         Object.keys(payload.allData).forEach(bizId => {
           if (allData[bizId]) {
             const sd = payload.allData[bizId];
-            // Only load if saved data has entries (user has actually used app)
-            if (sd.entries && sd.entries.length > 0) allData[bizId].entries = sd.entries;
+            if (sd.entries) allData[bizId].entries = sd.entries;
             if (sd.inventoryItems) allData[bizId].inventoryItems = sd.inventoryItems;
             if (sd.invoices) allData[bizId].invoices = sd.invoices;
             if (sd.cashbook) allData[bizId].cashbook = sd.cashbook;
@@ -1672,6 +1725,10 @@ function renderAll() {
   renderBusinesses();
   populateSaleCustomers();
   updateMoreBizName();
+}
+function saveAll() {
+  saveLocalData();
+  if (typeof fbSave === 'function') { fbSave(); window._justSaved = Date.now(); }
 }
 
 // ===== HELPERS =====
@@ -1749,6 +1806,7 @@ function deleteSelectedEntries() {
   allData[appState.currentBizId].entries = cd().entries.filter(e => !appState.selectedEntries.has(e.id));
   clearSelection();
   renderAll();
+  saveAll();
   showToast('🗑️ ' + sel.length + ' entries deleted');
 }
 
@@ -1911,6 +1969,7 @@ function deleteCurrentEntry() {
   if (!appState.currentDetail) return;
   const idx = cd().entries.findIndex(e => e.id === appState.currentDetail.id);
   if (idx > -1) cd().entries.splice(idx, 1);
+  saveAll();
   showToast('🗑️ Entry deleted');
   goHome();
 }
@@ -2286,6 +2345,7 @@ function saveEditTxn() {
   renderEntries();
   renderBalances();
   saveLocalData(); if (typeof fbSave === 'function') { fbSave(); window._justSaved = Date.now(); }
+  saveAll();
   showToast('✅ Transaction update ho gayi!');
 }
 
@@ -2331,6 +2391,7 @@ function saveEditEmployee() {
   if (editEmpPhotoData) emp.photo = editEmpPhotoData;
   closeById('overlay-edit-employee');
   renderPayroll();
+  saveAll();
   showToast('✅ Staff details updated!');
 }
 function deleteEmployee(id) {
@@ -2340,6 +2401,7 @@ function deleteEmployee(id) {
   const d = cd();
   d.employees = d.employees.filter(e=>e.id!==id);
   renderPayroll();
+  saveAll();
   showToast('🗑️ Employee deleted!');
 }
 function showEmpPhoto(id) {
@@ -2495,6 +2557,7 @@ function saveEditSaleItem() {
   closeById('overlay-edit-sale-item');
   renderSale();
   renderInventory();
+  saveAll();
   showToast('✅ Item updated!');
 }
 
@@ -2776,6 +2839,7 @@ function saveCustomer() {
   ['new-name','new-phone','new-email','new-address','new-balance'].forEach(id => document.getElementById(id).value='');
   newPhotoData = '';
   document.getElementById('new-photo-area').innerHTML = '<span style="font-size:24px;">📷</span><div class="photo-upload-label">Add Photo</div>';
+  saveAll();
   showToast('✅ '+name+' added!');
 }
 
@@ -2822,6 +2886,7 @@ function saveTxn() {
   closeById('overlay-add-txn');
   document.getElementById('txn-amount').value='';
   document.getElementById('txn-note').value='';
+  saveAll();
   showToast('✅ Transaction saved!');
 }
 
@@ -2840,6 +2905,7 @@ function saveItem() {
   ['item-name','item-category','item-price','item-stock'].forEach(id => document.getElementById(id).value='');
   closeById('overlay-add-item');
   renderInventory(); renderSale();
+  saveAll();
   showToast('✅ Item added!');
 }
 
@@ -2855,6 +2921,7 @@ function saveExpense() {
   ['exp-amount','exp-desc','exp-date-input'].forEach(id => document.getElementById(id).value='');
   closeById('overlay-add-expense');
   renderExpenses(expFilterCat);
+  saveAll();
   showToast('✅ Expense added!');
 }
 
@@ -2884,6 +2951,19 @@ function saveEmployee() {
   ['emp-name','emp-phone','emp-role','emp-salary','emp-password'].forEach(id=>document.getElementById(id).value='');
   closeById('overlay-add-employee');
   renderPayroll();
+  // Immediately save to localStorage so staff can login right away
+  saveLocalData();
+  // Also save to Firebase immediately (not debounced)
+  if (typeof db !== 'undefined') {
+    try {
+      const payload = {
+        allData: JSON.parse(JSON.stringify(allData)),
+        userAccounts: userAccounts,
+        updatedAt: Date.now()
+      };
+      db.ref('shopkeeper/data').set(payload);
+    } catch(e) {}
+  }
   showToast('✅ Staff member added! They can now log in with '+phone);
 }
 
@@ -3364,6 +3444,7 @@ function generateAndPrintPDF(title, textContent) {
 // ===== AUTO BACKUP (localStorage every 60s) =====
 function autoBackup() {
   try {
+    saveLocalData(); // Use unified save function
     const data = {
       allData: allData,
       businesses: businesses,
@@ -3445,6 +3526,7 @@ function saveShopProfile() {
   // Update settings display
   updateSettingsShopDisplay();
   closeById('overlay-shop-profile');
+  saveAll();
   showToast('✅ Shop Profile saved!');
 }
 
