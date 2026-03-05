@@ -460,6 +460,7 @@ body{font-family:'Noto Sans',sans-serif;background:linear-gradient(135deg,#1a1a2
     <span class="sel-bar-text" id="detail-sel-count">0 selected</span>
     <button class="sel-action" onclick="selectAllTxns()">All</button>
     <button class="sel-action" style="background:#f59e0b;color:#1e293b;font-weight:800;" onclick="openInvoiceView()">🧾 Bill Banao</button>
+    <button class="sel-action" style="background:#ef4444;color:white;font-weight:800;" onclick="deleteSelectedTxns()">🗑️ Delete</button>
     <button class="sel-action" onclick="clearTxnSelection()">✕</button>
   </div>
   <div id="txn-tap-hint" style="background:#fffbeb;padding:5px 14px;font-size:11px;color:#92400e;border-bottom:1px solid #fde68a;flex-shrink:0;display:flex;align-items:center;gap:6px;">
@@ -489,6 +490,12 @@ body{font-family:'Noto Sans',sans-serif;background:linear-gradient(135deg,#1a1a2
       <div onclick="filterCashbook('today')" id="cbf-today" style="background:var(--surface);color:var(--text2);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">📅 Today</div>
       <div onclick="filterCashbook('week')" id="cbf-week" style="background:var(--surface);color:var(--text2);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">📅 This Week</div>
     </div>
+    <div class="sel-bar" id="cb-sel-bar" style="margin:-14px -14px 12px;border-radius:0;display:none;">
+      <span class="sel-bar-text" id="cb-sel-count">0 selected</span>
+      <button class="sel-action" onclick="selectAllCashbook()">All</button>
+      <button class="sel-action" style="background:#ef4444;color:white;font-weight:800;" onclick="deleteSelectedCashbook()">🗑️ Delete</button>
+      <button class="sel-action" onclick="clearCbSelection()">✕</button>
+    </div>
     <div class="section-title">Recent Entries</div>
     <div id="cashbook-list"></div>
   </div>
@@ -509,6 +516,7 @@ body{font-family:'Noto Sans',sans-serif;background:linear-gradient(135deg,#1a1a2
       <span class="sel-bar-text" id="inv-sel-count">0 selected</span>
       <button class="sel-action" onclick="selectAllInventory()">All</button>
       <button class="sel-action" onclick="shareSelectedItems()">📄 PDF/Share</button>
+      <button class="sel-action" style="background:#ef4444;color:white;font-weight:800;" onclick="deleteSelectedInventory()">🗑️ Delete</button>
       <button class="sel-action" onclick="clearInvSelection()">✕</button>
     </div>
     <div style="display:flex;gap:6px;padding:4px 0 8px;overflow-x:auto;">
@@ -539,6 +547,7 @@ body{font-family:'Noto Sans',sans-serif;background:linear-gradient(135deg,#1a1a2
       <span class="sel-bar-text" id="invoice-sel-count">0 selected</span>
       <button class="sel-action" onclick="selectAllInvoices()">All</button>
       <button class="sel-action" onclick="shareSelectedInvoices('pdf')">📄 PDF/Share</button>
+      <button class="sel-action" style="background:#ef4444;color:white;font-weight:800;" onclick="deleteSelectedInvoices()">🗑️ Delete</button>
       <button class="sel-action" onclick="clearInvoiceSelection()">✕</button>
     </div>
     <div id="invoice-list"></div>
@@ -564,6 +573,12 @@ body{font-family:'Noto Sans',sans-serif;background:linear-gradient(135deg,#1a1a2
       <div onclick="filterPayroll('paid')" id="prf-paid" style="background:var(--surface);color:var(--text2);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">✅ Paid</div>
       <div onclick="filterPayroll('unpaid')" id="prf-unpaid" style="background:var(--surface);color:var(--text2);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">⏳ Unpaid</div>
     </div>
+    <div class="sel-bar" id="pr-sel-bar" style="margin:-14px -14px 12px;border-radius:0;display:none;">
+      <span class="sel-bar-text" id="pr-sel-count">0 selected</span>
+      <button class="sel-action" onclick="selectAllPayroll()">All</button>
+      <button class="sel-action" style="background:#ef4444;color:white;font-weight:800;" onclick="deleteSelectedPayroll()">🗑️ Delete</button>
+      <button class="sel-action" onclick="clearPrSelection()">✕</button>
+    </div>
     <div class="section-title">Employee List</div>
     <div id="payroll-list"></div>
   </div>
@@ -583,9 +598,15 @@ body{font-family:'Noto Sans',sans-serif;background:linear-gradient(135deg,#1a1a2
       <div class="stat-card"><div class="stat-value" style="color:var(--orange)" id="exp-year">₹0</div><div class="stat-label">This Year</div></div>
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;" id="exp-filters"></div>
+    <div class="sel-bar" id="exp-sel-bar" style="margin:-14px -14px 12px;border-radius:0;display:none;">
+      <span class="sel-bar-text" id="exp-sel-count">0 selected</span>
+      <button class="sel-action" onclick="selectAllExpenses()">All</button>
+      <button class="sel-action" style="background:#ef4444;color:white;font-weight:800;" onclick="deleteSelectedExpenses()">🗑️ Delete</button>
+      <button class="sel-action" onclick="clearExpSelection()">✕</button>
+    </div>
     <div id="expense-list"></div>
   </div>
-  <div class="bottom-bar"><button class="bar-item active" onclick="goHome()">🏠<br>Home</button><button class="bar-item" onclick="showNavScreen('sale')">🛒<br>Sale</button><button class="bar-item" onclick="openOverlay('overlay-more')">⋯<br>More</button></div>
+  <div class="bottom-bar"><button class="bar-item active" onclick="goHome()" >🏠<br>Home</button><button class="bar-item" onclick="showNavScreen('sale')">🛒<br>Sale</button><button class="bar-item" onclick="openOverlay('overlay-more')">⋯<br>More</button></div>
 </div>
 
 <!-- SALE -->
@@ -1776,6 +1797,10 @@ function setHomeStaffFilter(name) {
 }
 
 // Cashbook filter
+
+let cbLongPressTimer = null;
+function startCbLongPress(id) { cbLongPressTimer = setTimeout(() => toggleCbSelect(id), 600); }
+
 let cbFilter = 'all';
 function filterCashbook(type) {
   cbFilter = type;
@@ -1804,6 +1829,10 @@ function filterInventoryStock(type) {
 }
 
 // Payroll filter
+
+let prLongPressTimer = null;
+function startPrLongPress(id) { prLongPressTimer = setTimeout(() => togglePrSelect(id), 600); }
+
 let payrollFilter = 'all';
 function filterPayroll(type) {
   payrollFilter = type;
@@ -1821,6 +1850,104 @@ function filterPayroll(type) {
 function filterDetailTxns(type) {
   appState.txnFilter = type;
   renderDetailTxns();
+}
+
+
+
+// ===== DELETE FUNCTIONS FOR ALL SCREENS =====
+
+// --- INVENTORY ---
+let selectedInvDel = new Set();
+function deleteSelectedInventory() {
+  if (appState.selectedInvItems.size === 0) { showToast('⚠️ Pehle items select karo!'); return; }
+  const count = appState.selectedInvItems.size;
+  if (!confirm(count + ' item(s) delete karna chahte hain?')) return;
+  cd().inventoryItems = cd().inventoryItems.filter(i => !appState.selectedInvItems.has(i.id));
+  appState.selectedInvItems.clear();
+  renderInventory();
+  saveAll();
+  showToast('🗑️ ' + count + ' item(s) delete ho gaye!');
+}
+
+// --- INVOICES ---
+function deleteSelectedInvoices() {
+  if (appState.selectedInvoices.size === 0) { showToast('⚠️ Pehle invoices select karo!'); return; }
+  const count = appState.selectedInvoices.size;
+  if (!confirm(count + ' invoice(s) delete karna chahte hain?')) return;
+  cd().invoices = cd().invoices.filter(i => !appState.selectedInvoices.has(i.id));
+  appState.selectedInvoices.clear();
+  renderInvoices();
+  saveAll();
+  showToast('🗑️ ' + count + ' invoice(s) delete ho gaye!');
+}
+
+// --- CASHBOOK ---
+let selectedCb = new Set();
+function toggleCbSelect(id) {
+  if (selectedCb.has(id)) selectedCb.delete(id);
+  else selectedCb.add(id);
+  renderCashbook();
+}
+function selectAllCashbook() {
+  cd().cashbook.forEach(e => selectedCb.add(e.id));
+  renderCashbook();
+}
+function clearCbSelection() { selectedCb.clear(); renderCashbook(); }
+function deleteSelectedCashbook() {
+  if (selectedCb.size === 0) { showToast('⚠️ Pehle entries select karo!'); return; }
+  const count = selectedCb.size;
+  if (!confirm(count + ' cashbook entr(ies) delete karna chahte hain?')) return;
+  cd().cashbook = cd().cashbook.filter(e => !selectedCb.has(e.id));
+  selectedCb.clear();
+  renderCashbook();
+  saveAll();
+  showToast('🗑️ ' + count + ' entr(ies) delete ho gaye!');
+}
+
+// --- EXPENSES ---
+let selectedExp = new Set();
+function toggleExpSelect(id) {
+  if (selectedExp.has(id)) selectedExp.delete(id);
+  else selectedExp.add(id);
+  renderExpenses(expFilterCat);
+}
+function selectAllExpenses() {
+  cd().expenses.forEach(e => selectedExp.add(e.id));
+  renderExpenses(expFilterCat);
+}
+function clearExpSelection() { selectedExp.clear(); renderExpenses(expFilterCat); }
+function deleteSelectedExpenses() {
+  if (selectedExp.size === 0) { showToast('⚠️ Pehle expenses select karo!'); return; }
+  const count = selectedExp.size;
+  if (!confirm(count + ' expense(s) delete karna chahte hain?')) return;
+  cd().expenses = cd().expenses.filter(e => !selectedExp.has(e.id));
+  selectedExp.clear();
+  renderExpenses(expFilterCat);
+  saveAll();
+  showToast('🗑️ ' + count + ' expense(s) delete ho gaye!');
+}
+
+// --- PAYROLL ---
+let selectedPr = new Set();
+function togglePrSelect(id) {
+  if (selectedPr.has(id)) selectedPr.delete(id);
+  else selectedPr.add(id);
+  renderPayroll();
+}
+function selectAllPayroll() {
+  cd().employees.forEach(e => selectedPr.add(e.id));
+  renderPayroll();
+}
+function clearPrSelection() { selectedPr.clear(); renderPayroll(); }
+function deleteSelectedPayroll() {
+  if (selectedPr.size === 0) { showToast('⚠️ Pehle employees select karo!'); return; }
+  const count = selectedPr.size;
+  if (!confirm(count + ' employee(s) delete karna chahte hain?')) return;
+  cd().employees = cd().employees.filter(e => !selectedPr.has(e.id));
+  selectedPr.clear();
+  renderPayroll();
+  saveAll();
+  showToast('🗑️ ' + count + ' employee(s) delete ho gaye!');
 }
 
 
@@ -2052,6 +2179,22 @@ function toggleTxnSelect(id) {
   else appState.selectedTxns.add(id);
   renderDetailTxns();
 }
+
+function deleteSelectedTxns() {
+  const e = appState.currentDetail;
+  if (!e || appState.selectedTxns.size === 0) { showToast('⚠️ Pehle transactions select karo!'); return; }
+  const count = appState.selectedTxns.size;
+  if (!confirm(count + ' transaction(s) delete karna chahte hain?')) return;
+  e.txns = e.txns.filter(t => !appState.selectedTxns.has(t.id));
+  appState.selectedTxns.clear();
+  recalcBalance(e);
+  renderDetailTxns();
+  renderEntries();
+  renderBalances();
+  saveAll();
+  showToast('🗑️ ' + count + ' transaction(s) delete ho gaye!');
+}
+
 function clearTxnSelection() { appState.selectedTxns.clear(); renderDetailTxns(); }
 function selectAllTxns() {
   const e = appState.currentDetail;
@@ -2114,8 +2257,14 @@ function renderCashbook() {
   document.getElementById('cb-in').textContent = fmt(inTotal);
   document.getElementById('cb-out').textContent = fmt(outTotal);
   document.getElementById('cb-bal').textContent = fmt(inTotal - outTotal);
+  const cbSelMode = selectedCb.size > 0;
+  const cbSelBar = document.getElementById('cb-sel-bar');
+  if (cbSelBar) { cbSelBar.style.display = cbSelMode ? 'flex' : 'none'; document.getElementById('cb-sel-count').textContent = selectedCb.size + ' selected'; }
   document.getElementById('cashbook-list').innerHTML = cb.map(e => `
-    <div class="txn-item">
+    <div class="txn-item${selectedCb.has(e.id)?' selected':''}"
+      ontouchstart="startCbLongPress(${e.id})" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()"
+      onclick="${cbSelMode?`toggleCbSelect(${e.id})`:'void(0)'}">
+      ${cbSelMode ? `<div class="sel-check">${selectedCb.has(e.id)?'✓':''}</div>` : ''}
       <div style="flex:1"><div class="txn-note">${e.note}</div><div class="txn-date">${e.date}${e.addedBy?' • 👤 '+e.addedBy:''}</div></div>
       <div class="amount ${e.type==='in'?'receivable':'payable'}" style="font-family:'Baloo 2',cursive;font-weight:700">${e.type==='in'?'＋':'−'}${fmt(e.amount)}</div>
     </div>`).join('');
@@ -2297,8 +2446,13 @@ function renderPayroll() {
   document.getElementById('pr-count').textContent = emps.length;
   document.getElementById('pr-total').textContent = fmt(emps.reduce((s,e)=>s+e.salary,0));
   document.getElementById('pr-paid').textContent = emps.filter(e=>e.paid).length;
+  const prSelMode = selectedPr.size > 0;
+  const prSelBar = document.getElementById('pr-sel-bar');
+  if (prSelBar) { prSelBar.style.display = prSelMode ? 'flex' : 'none'; if(document.getElementById('pr-sel-count')) document.getElementById('pr-sel-count').textContent = selectedPr.size + ' selected'; }
   document.getElementById('payroll-list').innerHTML = emps.map(e => `
-    <div class="emp-item">
+    <div class="emp-item${selectedPr.has(e.id)?' selected':''}"
+      ontouchstart="startPrLongPress(${e.id})" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()">
+      ${prSelMode ? `<div class="sel-check" style="margin-right:8px;flex-shrink:0;">${selectedPr.has(e.id)?'✓':''}</div>` : ''}
       <div style="position:relative;cursor:pointer;" onclick="showEmpPhoto(${e.id})">
         ${e.photo ? `<img src="${e.photo}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid var(--border);">`
         : `<div style="width:44px;height:44px;border-radius:50%;background:${getColor(e.name)};display:flex;align-items:center;justify-content:center;color:white;font-size:18px;font-family:'Baloo 2',cursive;font-weight:700;">${e.name[0]}</div>`}
@@ -2549,6 +2703,10 @@ function showEmpPhoto(id) {
 }
 
 // ===== EXPENSES =====
+
+let expLongPressTimer = null;
+function startExpLongPress(id) { expLongPressTimer = setTimeout(() => toggleExpSelect(id), 600); }
+
 let expFilterCat = 'All';
 function renderExpenses(filter='All') {
   const all = cd().expenses;
@@ -2561,9 +2719,15 @@ function renderExpenses(filter='All') {
   const month = all.reduce((s,e)=>s+e.amount,0);
   document.getElementById('exp-month').textContent = fmt(month);
   document.getElementById('exp-year').textContent = fmt(month * 1.2);
+  const expSelMode = selectedExp.size > 0;
+  const expSelBar = document.getElementById('exp-sel-bar');
+  if (expSelBar) { expSelBar.style.display = expSelMode ? 'flex' : 'none'; document.getElementById('exp-sel-count').textContent = selectedExp.size + ' selected'; }
   document.getElementById('expense-list').innerHTML = shown.map(e => `
-    <div class="inv-item">
-      <div class="inv-row">
+    <div class="inv-item${selectedExp.has(e.id)?' selected':''}"
+      ontouchstart="startExpLongPress(${e.id})" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()"
+      onclick="${expSelMode?`toggleExpSelect(${e.id})`:'void(0)'}">
+      ${expSelMode ? `<div class="sel-check" style="margin-right:8px;">${selectedExp.has(e.id)?'✓':''}</div>` : ''}
+      <div class="inv-row" style="flex:1">
         <div><div class="exp-category">${e.category}</div><div style="font-weight:700;font-size:14px">${e.desc}</div><div style="font-size:12px;color:var(--text2)">${e.date}${e.addedBy?' • 👤 '+e.addedBy:''}</div></div>
         <div style="font-family:'Baloo 2',cursive;font-weight:800;font-size:16px;color:var(--red)">−${fmt(e.amount)}</div>
       </div>
