@@ -650,7 +650,7 @@ function _mergeCloud(d) {
   <div class="detail-topbar">
     <button class="back-btn" onclick="goHome()">←</button>
     <div><div class="detail-name">Invoices</div></div>
-    <button class="add-btn" style="margin-left:auto;" onclick="showNavScreen('sale')">＋ New</button>
+    <button class="add-btn" style="margin-left:auto;" onclick="openInvoiceGenerator()">🧾 New Invoice</button>
   </div>
   <div class="inner-screen">
     <div class="stat-grid">
@@ -2124,11 +2124,11 @@ function renderEntries() {
     <div class="entry-card${appState.selectedEntries.has(e.id)?' selected':''}"
       onclick="onEntryClick(${e.id})"
       oncontextmenu="onEntryLongPress(event,${e.id})"
-      ontouchstart="startLongPress(${e.id})"
-      ontouchend="cancelLongPress()"
+      ontouchstart="entryTouchStart(${e.id})"
+      ontouchend="entryTouchEnd(event,${e.id})"
       ontouchmove="cancelLongPress()">
       ${selMode ? `<div class="sel-check">${appState.selectedEntries.has(e.id)?'✓':''}</div>` : ''}
-      <div class="avatar" style="background:${getColor(e.name)}" onclick="event.stopPropagation();showPhoto(${e.id})">
+      <div class="avatar" style="background:${getColor(e.name)}">
         ${e.photo ? `<img src="${e.photo}" alt="${e.name[0]}">` : `<span>${e.name[0]}</span>`}
       </div>
       <div class="entry-info">
@@ -2148,8 +2148,26 @@ function renderEntries() {
 }
 
 let longPressTimer = null;
+let _touchT = 0, _touchMoved = false;
+
+function entryTouchStart(id) {
+  _touchT = Date.now();
+  _touchMoved = false;
+  longPressTimer = setTimeout(() => { toggleEntrySelect(id); }, 650);
+}
+function entryTouchEnd(e, id) {
+  clearTimeout(longPressTimer);
+  if (_touchMoved) return;
+  const dur = Date.now() - _touchT;
+  if (dur < 500) {
+    e.preventDefault(); // click event ko block karo (duplicate na chale)
+    if (appState.selectedEntries.size > 0) toggleEntrySelect(id);
+    else openDetail(id);
+  }
+}
 function startLongPress(id) {
-  longPressTimer = setTimeout(() => { toggleEntrySelect(id); }, 600);
+  _touchT = Date.now();
+  longPressTimer = setTimeout(() => { toggleEntrySelect(id); }, 650);
 }
 function cancelLongPress() { clearTimeout(longPressTimer); }
 function onEntryClick(id) {
@@ -2239,8 +2257,12 @@ function downloadSharePDF() { generateAndPrintPDF(appState._shareTitle, appState
 // ===== DETAIL =====
 function openDetail(id) {
   appState.currentDetail = cd().entries.find(e => e.id === id);
-  if (!appState.currentDetail) return;
+  if (!appState.currentDetail) {
+    showToast('❌ Entry nahi mili: ' + id);
+    return;
+  }
   const e = appState.currentDetail;
+  if (!e.txns) e.txns = [];
   document.getElementById('detail-name').textContent = e.name;
   document.getElementById('detail-sub').textContent = e.type.toUpperCase() + ' • ' + (e.phone || 'N/A') + (e.address?' • '+e.address:'');
   document.getElementById('detail-balance').innerHTML = `
@@ -2960,9 +2982,12 @@ function renderSale() {
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
           <div class="qty-control">
-            <button class="qty-btn qty-minus" onclick="changeQty(${p.id},-1)">−</button>
+            <button class="qty-btn qty-minus" onclick="changeQty(${p.id},-1)" ${(p.stock||0)===0?'disabled style="opacity:.4"':''}>−</button>
             <span class="qty-num" id="qty-${p.id}">${saleQtys[p.id]||0}</span>
-            <button class="qty-btn qty-plus" onclick="changeQty(${p.id},1)">＋</button>
+            <button class="qty-btn qty-plus" onclick="changeQty(${p.id},1)" ${(p.stock||0)===0?'disabled style="opacity:.4"':''}>＋</button>
+          </div>
+          <div id="stock-${p.id}" style="font-size:10px;font-weight:600;text-align:right;margin-top:4px;color:${(p.stock||0)===0?'#ef4444':(p.stock||0)<=5?'#f59e0b':'#22c55e'};">${(p.stock||0)===0?'❌ Stock nahi':'📦 Stock: '+((p.stock||0)-(saleQtys[p.id]||0))}</div>
+          <div style="display:none">
           </div>
           <button onclick="editSaleItem(${p.id})" style="background:var(--primary-light);color:var(--primary);border:none;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;">✏️ Edit</button>
         </div>
@@ -3143,7 +3168,8 @@ function shareSelectedSaleItems() {
       <div style="margin-top:16px;text-align:center;font-size:10px;color:#aaa">Powered by SHOPKEEPER</div>
     </div>`;
   const pw = window.open('','_blank','width=750,height=900');
-  pw.document.write(`<html><head><title>Sale Items</title><style>@media print{body{margin:0}button{display:none!important}}</style></head><body>${html}<br><button onclick="window.print()" style="display:block;margin:10px auto;background:#2563EB;color:white;border:none;padding:10px 28px;font-size:14px;border-radius:8px;cursor:pointer">🖨️ Print / Save PDF</button></body></html>`);
+  pw.document.write(`<html><head><title>Sale Items</title><style>@media print{body{margin:0}button{display:none!important}}</style></head><body>${html}<br><button onclick="window.print()" style="display:block;margin:10px auto;background:#2563EB;color:white;border:none;padding:10px 28px;font-size:14px;border-radius:8px;cursor:pointer">🖨️ Print / Save PDF</button>
+</body></html>`);
   pw.document.close();
   setTimeout(()=>pw.print(),500);
   showToast('📄 PDF ready!');
@@ -3181,9 +3207,23 @@ function removeCustomItem(id) {
 }
 
 function changeQty(id, d) {
-  saleQtys[id] = Math.max(0, (saleQtys[id]||0) + d);
-  const el = document.getElementById('qty-'+id);
-  if (el) el.textContent = saleQtys[id];
+  const item = cd().inventoryItems.find(i => i.id == id);
+  const maxStock = item ? (item.stock || 0) : 9999;
+  const cur = saleQtys[id] || 0;
+  const next = Math.max(0, cur + d);
+  if (d > 0 && maxStock > 0 && next > maxStock) {
+    showToast('⚠️ Sirf ' + maxStock + ' stock available hai!'); return;
+  }
+  saleQtys[id] = next;
+  const el = document.getElementById('qty-' + id);
+  if (el) el.textContent = next;
+  // Color stock indicator
+  const stockEl = document.getElementById('stock-' + id);
+  if (stockEl && item) {
+    const rem = maxStock - next;
+    stockEl.textContent = rem + ' bache';
+    stockEl.style.color = rem <= 2 ? '#ef4444' : rem <= 5 ? '#f59e0b' : '#16a34a';
+  }
   updateSaleTotal();
 }
 function updateSaleTotal() {
@@ -3218,13 +3258,20 @@ function saveSaleAsInvoice() {
   };
   cd().invoices.unshift(newInv);
   // Add to cashbook
-  cd().cashbook.unshift({ id:Date.now(), note:'Sale - '+newInv.customer, date:'Today', amount:total, type:'in' });
+  cd().cashbook.unshift({ id:Date.now(), note:'Sale - '+newInv.customer, date:fmtDateTimeNow ? fmtDateTimeNow() : new Date().toLocaleString('en-IN'), amount:total, type:'in' });
+  // ✅ DEDUCT STOCK from inventory
+  invItems.forEach(function(i) {
+    const inv = cd().inventoryItems.find(x => x.id === i.id);
+    if (inv) inv.stock = Math.max(0, (parseInt(inv.stock)||0) - (saleQtys[i.id]||0));
+  });
   saleQtys = {};
   customSaleItems = [];
+  saveAll();
   renderSale();
   renderInvoices();
   renderCashbook();
-  showToast('🎉 Invoice '+id+' created!');
+  renderInventory();
+  showToast('🎉 Invoice '+id+' bana! Stock update ho gaya ✅');
   showNavScreen('invoices');
 }
 
@@ -4587,6 +4634,507 @@ init();
 var _pp=null;
 try{if('serviceWorker'in navigator){var sw='self.addEventListener("install",function(){self.skipWaiting();});';navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(function(){});}}catch(ex){}
 setTimeout(function(){var isA=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone;if(!isA&&!_pp){var g=document.getElementById('install-guide');if(g)g.style.display='flex';}},6000);
+
+// ===================================================================
+// INVOICE GENERATOR
+// ===================================================================
+let igItems = [];
+let igItemCnt = 0;
+
+function openInvoiceGenerator() {
+  // Pre-fill seller from shop profile
+  const sp = appState.shopProfile || {};
+  const biz = (businesses||[]).find(b=>b.id===appState.currentBizId)||{};
+  document.getElementById('ig-s-name').value  = sp.name  || biz.name || '';
+  document.getElementById('ig-s-phone').value = sp.phone || biz.phone|| '';
+  document.getElementById('ig-s-gst').value   = sp.gst   || biz.gst  || '';
+  document.getElementById('ig-s-pan').value   = sp.pan   || biz.pan  || '';
+  document.getElementById('ig-s-addr').value  = sp.address|| biz.address||'';
+
+  // Auto invoice number
+  const n = (cd().invoices||[]).length + 1;
+  document.getElementById('ig-inv-num').value = 'INV-' + String(n).padStart(3,'0');
+  document.getElementById('ig-inv-date').value = new Date().toISOString().slice(0,10);
+
+  // Populate customers
+  const sel = document.getElementById('ig-b-select');
+  sel.innerHTML = '<option value="">— Customer choose karo ya neeche type karo —</option>' +
+    (cd().entries||[]).filter(e=>e.type==='customer')
+      .map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+
+  // Reset items
+  igItems = [];
+  igItemCnt = 0;
+  igRenderItems();
+  openOverlay('overlay-invoice-gen');
+}
+
+function igPickCustomer(id) {
+  if (!id) return;
+  const c = (cd().entries||[]).find(e=>e.id==id);
+  if (c) {
+    document.getElementById('ig-b-name').value = c.name||'';
+    document.getElementById('ig-b-addr').value = c.address||'';
+  }
+}
+
+function igAddItem(name, price, qty, taxRate, hsn, isShip) {
+  const defRate = parseFloat(document.getElementById('ig-gst-rate').value)||18;
+  igItems.push({
+    id: ++igItemCnt,
+    name:    name    !== undefined ? name    : '',
+    price:   price   !== undefined ? price   : 0,
+    qty:     qty     !== undefined ? qty     : 1,
+    taxRate: taxRate !== undefined ? taxRate : defRate,
+    hsn:     hsn     !== undefined ? hsn     : '',
+    isShip:  isShip  || false
+  });
+  igRenderItems();
+}
+
+function igAddShipping() { igAddItem('Shipping Charges',0,1,null,'',true); }
+
+function igFromInventory() {
+  const items = (cd().inventoryItems||[]).filter(i=>(i.stock||0)>0);
+  if (!items.length){ showToast('⚠️ Inventory khaali hai!'); return; }
+  items.forEach(i=>{
+    if (!igItems.find(x=>x.invId===i.id))
+      igItems.push({id:++igItemCnt, invId:i.id, name:i.name, price:i.price||0, qty:1,
+        taxRate:18, hsn:'', isShip:false});
+  });
+  igRenderItems();
+  showToast('📦 '+items.length+' items add ho gaye!');
+}
+
+function igRemoveItem(id) { igItems = igItems.filter(i=>i.id!==id); igRenderItems(); }
+
+function igUpdate(id, field, val) {
+  const item = igItems.find(i=>i.id===id);
+  if (!item) return;
+  item[field] = ['price','qty','taxRate'].includes(field) ? (parseFloat(val)||0) : val;
+  igRenderItems();
+}
+
+function igRenderItems() {
+  const tbody = document.getElementById('ig-items-tbody');
+  if (!tbody) return;
+  const inp = (v,f,t,extra)=>`<input type="${t||'text'}" value="${v}"
+    oninput="igUpdate(${f[0]},'${f[1]}',this.value)"
+    style="width:100%;padding:4px;border-radius:4px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:11px;${extra||''}">`;
+  tbody.innerHTML = igItems.length ? igItems.map(item=>{
+    const net   = item.price * item.qty;
+    const tax   = Math.round(net * item.taxRate / 100 * 100)/100;
+    const total = net + tax;
+    return `<tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:4px 3px;">${inp(item.name,[item.id,'name'],'text','min-width:100px;')}</td>
+      <td style="padding:4px 3px;">${inp(item.hsn,[item.id,'hsn'],'text')}</td>
+      <td style="padding:4px 3px;">${inp(item.price,[item.id,'price'],'number')}</td>
+      <td style="padding:4px 3px;">${item.isShip?'<span style="color:#888;font-size:10px;">—</span>':inp(item.qty,[item.id,'qty'],'number')}</td>
+      <td style="padding:4px 3px;text-align:right;color:var(--text2);font-size:11px;">₹${net.toFixed(2)}</td>
+      <td style="padding:4px 3px;">
+        <select onchange="igUpdate(${item.id},'taxRate',this.value)"
+          style="width:100%;padding:4px;border-radius:4px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:11px;">
+          ${[0,5,12,18,28].map(r=>`<option value="${r}"${r==item.taxRate?' selected':''}>${r}%</option>`).join('')}
+        </select>
+      </td>
+      <td style="padding:4px 3px;text-align:right;color:var(--text2);font-size:11px;">₹${tax.toFixed(2)}</td>
+      <td style="padding:4px 3px;text-align:right;font-weight:700;font-size:12px;color:var(--text);">₹${total.toFixed(2)}</td>
+      <td style="padding:4px 3px;"><button onclick="igRemoveItem(${item.id})"
+        style="background:#ef4444;color:white;border:none;border-radius:4px;padding:3px 7px;cursor:pointer;font-size:11px;">✕</button></td>
+    </tr>`;
+  }).join('')
+  : `<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:14px;font-size:12px;">
+      Koi item nahi — "Add Item" ya "Inventory" button dabao
+    </td></tr>`;
+  igRecalc();
+}
+
+function igRecalc() {
+  const gstType = (document.getElementById('ig-gst-type')||{}).value || 'cgst_sgst';
+  let taxable=0, cgst=0, sgst=0, igstAmt=0;
+  igItems.forEach(i=>{
+    const net = i.price * i.qty;
+    const tax = Math.round(net * i.taxRate / 100 * 100)/100;
+    taxable += net;
+    if (gstType==='igst') igstAmt+=tax; else {cgst+=tax/2; sgst+=tax/2;}
+  });
+  const grand = taxable+cgst+sgst+igstAmt;
+  const el = document.getElementById('ig-totals-preview');
+  if (!el) return;
+  const row = (label,val,bold)=>`<div style="display:flex;justify-content:space-between;padding:5px 0;
+    border-bottom:1px solid var(--border);${bold?'font-weight:800;font-size:15px;color:var(--green)':'font-size:12px;color:var(--text2)'}">
+    <span>${label}</span><span>₹${val.toFixed(2)}</span></div>`;
+  el.innerHTML =
+    row('Taxable Amount', taxable) +
+    (gstType==='cgst_sgst' ? row('CGST',cgst)+row('SGST',sgst) : '') +
+    (gstType==='igst'      ? row('IGST',igstAmt) : '') +
+    row('GRAND TOTAL', grand, true);
+}
+
+function igGenerate() {
+  if (!igItems.length){ showToast('⚠️ Koi item nahi!'); return; }
+  const buyerName = document.getElementById('ig-b-name').value.trim();
+  if (!buyerName){ showToast('⚠️ Buyer name daalna zaroori hai!'); return; }
+
+  const gstType = document.getElementById('ig-gst-type').value;
+  const sellerName = document.getElementById('ig-s-name').value || 'My Shop';
+  let taxable=0,cgst=0,sgst=0,igstAmt=0;
+  igItems.forEach(i=>{
+    const net=i.price*i.qty, tax=Math.round(net*i.taxRate/100*100)/100;
+    taxable+=net;
+    if(gstType==='igst') igstAmt+=tax; else {cgst+=tax/2;sgst+=tax/2;}
+  });
+  const grand = taxable+cgst+sgst+igstAmt;
+  const invNum = document.getElementById('ig-inv-num').value || ('INV-'+String((cd().invoices||[]).length+1).padStart(3,'0'));
+  const invDate = document.getElementById('ig-inv-date').value;
+  const fmtDate = invDate ? new Date(invDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+
+  const seller = {
+    name: sellerName,
+    phone: document.getElementById('ig-s-phone').value,
+    gst:   document.getElementById('ig-s-gst').value,
+    pan:   document.getElementById('ig-s-pan').value,
+    address: document.getElementById('ig-s-addr').value
+  };
+  const buyer = {
+    name: buyerName,
+    address: document.getElementById('ig-b-addr').value,
+    pos:  document.getElementById('ig-b-pos').value,
+    pod:  document.getElementById('ig-b-pod').value,
+    stateCode: document.getElementById('ig-b-state').value
+  };
+
+  // Save to app invoices
+  const newInv = {
+    id: invNum,
+    customer: buyerName,
+    date: fmtDate,
+    amount: grand,
+    status: 'unpaid',
+    items: igItems.map(i=>({name:i.name,qty:i.qty,price:i.price,taxRate:i.taxRate,hsn:i.hsn,isShip:i.isShip})),
+    gstType, seller, buyer,
+    ordNum: document.getElementById('ig-ord-num').value,
+    reverse: document.getElementById('ig-reverse').value,
+    addedAt: (typeof fmtDateTimeNow==='function') ? fmtDateTimeNow() : new Date().toLocaleString('en-IN')
+  };
+  cd().invoices.unshift(newInv);
+
+  // Deduct inventory stock
+  igItems.forEach(i=>{
+    if (i.invId){
+      const inv = (cd().inventoryItems||[]).find(x=>x.id===i.invId);
+      if (inv) inv.stock = Math.max(0,(parseInt(inv.stock)||0) - i.qty);
+    }
+  });
+
+  // Cashbook entry
+  cd().cashbook.unshift({
+    id: Date.now(),
+    note: 'Invoice '+invNum+' — '+buyerName,
+    date: (typeof fmtDateTimeNow==='function') ? fmtDateTimeNow() : new Date().toLocaleString('en-IN'),
+    amount: grand, type:'in'
+  });
+
+  saveAll();
+  renderInvoices(); renderInventory(); renderCashbook();
+  closeById('overlay-invoice-gen');
+  showToast('🎉 '+invNum+' generate hua!');
+
+  // Open print window
+  igPrint(newInv, gstType, taxable, cgst, sgst, igstAmt, grand);
+}
+
+function igPrint(inv, gstType, taxable, cgst, sgst, igstAmt, grand) {
+  const colCount = gstType==='none' ? 6 : 9;
+
+  // Build item rows (Amazon CGST+SGST style = 2 rows per item)
+  let itemsHtml = '';
+  inv.items.forEach((item,idx)=>{
+    const net   = item.price * item.qty;
+    const tax   = Math.round(net*(item.taxRate||18)/100*100)/100;
+    const total = net + tax;
+    const half  = (tax/2).toFixed(2);
+    if (gstType==='none') {
+      itemsHtml += `<tr><td class="c">${idx+1}</td>
+        <td>${item.name}${item.hsn?`<br><small style="color:#888">HSN: ${item.hsn}</small>`:''}</td>
+        <td class="r">₹${item.price.toFixed(2)}</td>
+        <td class="c">${item.isShip?'—':item.qty}</td>
+        <td class="r">₹${net.toFixed(2)}</td>
+        <td class="r b">₹${total.toFixed(2)}</td></tr>`;
+    } else if (gstType==='igst') {
+      itemsHtml += `<tr><td class="c">${idx+1}</td>
+        <td>${item.name}${item.hsn?`<br><small style="color:#888">HSN: ${item.hsn}</small>`:''}</td>
+        <td class="r">₹${item.price.toFixed(2)}</td>
+        <td class="c">${item.isShip?'—':item.qty}</td>
+        <td class="r">₹${net.toFixed(2)}</td>
+        <td class="c">${item.taxRate||18}%</td><td class="c">IGST</td>
+        <td class="r">₹${tax.toFixed(2)}</td>
+        <td class="r b">₹${total.toFixed(2)}</td></tr>`;
+    } else {
+      itemsHtml += `<tr>
+        <td class="c" rowspan="2">${idx+1}</td>
+        <td rowspan="2">${item.name}${item.hsn?`<br><small style="color:#888">HSN: ${item.hsn}</small>`:''}</td>
+        <td class="r" rowspan="2">₹${item.price.toFixed(2)}</td>
+        <td class="c" rowspan="2">${item.isShip?'—':item.qty}</td>
+        <td class="r" rowspan="2">₹${net.toFixed(2)}</td>
+        <td class="c">${(item.taxRate||18)/2}%</td><td class="c">CGST</td>
+        <td class="r">₹${half}</td>
+        <td class="r b" rowspan="2">₹${total.toFixed(2)}</td>
+      </tr><tr>
+        <td class="c">${(item.taxRate||18)/2}%</td><td class="c">SGST</td>
+        <td class="r">₹${half}</td>
+      </tr>`;
+    }
+  });
+
+  const thead = gstType==='none'
+    ? '<tr><th>Sl</th><th>Description</th><th>Unit Price</th><th>Qty</th><th>Net Amt</th><th>Total</th></tr>'
+    : gstType==='igst'
+    ? '<tr><th>Sl</th><th>Description</th><th>Unit Price</th><th>Qty</th><th>Net Amt</th><th>Tax%</th><th>Type</th><th>Tax Amt</th><th>Total</th></tr>'
+    : '<tr><th>Sl</th><th>Description</th><th>Unit Price</th><th>Qty</th><th>Net Amt</th><th>Tax%</th><th>Type</th><th>Tax Amt</th><th>Total</th></tr>';
+
+  const totalsHtml = `
+    <div class="tr2"><span>Taxable Amount</span><span>₹${taxable.toFixed(2)}</span></div>
+    ${gstType==='cgst_sgst'?`<div class="tr2"><span>CGST</span><span>₹${cgst.toFixed(2)}</span></div>
+    <div class="tr2"><span>SGST</span><span>₹${sgst.toFixed(2)}</span></div>`:''}
+    ${gstType==='igst'?`<div class="tr2"><span>IGST</span><span>₹${igstAmt.toFixed(2)}</span></div>`:''}
+    <div class="tr2 grand"><span>GRAND TOTAL</span><span>₹${grand.toFixed(2)}</span></div>`;
+
+  const words = igToWords(Math.round(grand));
+
+  const pw = window.open('','_blank','width=860,height=1000');
+  pw.document.write(`<!DOCTYPE html><html><head><title>Invoice ${inv.id}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;font-size:11px;color:#000;background:#e8eef7;padding:20px}
+.page{background:#fff;max-width:794px;margin:0 auto;padding:24px 28px;box-shadow:0 4px 20px rgba(0,0,0,.15);}
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:8px;}
+.logo{font-size:22px;font-weight:900;letter-spacing:-1px}
+.inv-title{text-align:right}
+.inv-title h2{font-size:13px;font-weight:700;border:2px solid #000;padding:4px 10px;margin-bottom:4px;}
+.gst-row{display:flex;gap:20px;font-size:10px;padding:4px 8px;background:#f9f9f9;border-bottom:1px solid #ccc;margin-bottom:6px;}
+.addrs{display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid #ccc;margin-bottom:6px;}
+.addr{padding:8px 10px;border-right:1px solid #ccc;font-size:10.5px;line-height:1.5;}
+.addr:last-child{border-right:none}
+.addr-lbl{font-size:9px;font-weight:700;text-transform:uppercase;color:#555;margin-bottom:3px;}
+.meta{display:flex;justify-content:space-between;font-size:10.5px;padding:4px 0;border-bottom:1px solid #ccc;margin-bottom:6px;line-height:1.8;}
+table{width:100%;border-collapse:collapse;margin-bottom:6px;font-size:10.5px}
+th{background:#1e293b;color:#fff;padding:6px 5px;text-align:left;border:1px solid #334155}
+td{padding:5px 5px;border:1px solid #ccc;vertical-align:middle}
+.c{text-align:center}.r{text-align:right}.b{font-weight:700}
+.totals-wrap{display:flex;justify-content:flex-end;margin-bottom:8px;}
+.totals{border:1.5px solid #ccc;min-width:250px;}
+.tr2{display:flex;justify-content:space-between;padding:4px 10px;font-size:11px;border-bottom:1px solid #eee;}
+.grand{background:#1e293b;color:#fff;font-weight:700;font-size:13px;}
+.words{font-size:10px;border:1px solid #ccc;padding:5px 8px;background:#fffbeb;margin-bottom:8px;}
+.sign{display:flex;justify-content:flex-end;}
+.sign-box{text-align:center;border:1px solid #ccc;padding:8px 16px;min-width:200px;}
+.sign-name{font-weight:700;margin-bottom:18px;font-size:11px;}
+.sign-line{border-bottom:1px solid #999;width:120px;margin:0 auto 3px;}
+.note{font-size:9px;color:#888;text-align:center;border-top:1px solid #eee;padding-top:5px;margin-top:6px;}
+.no-print{margin:14px 0;text-align:center;display:flex;gap:8px;justify-content:center;}
+@media print{.no-print{display:none!important}body{background:#fff;padding:0}.page{box-shadow:none}}
+</style></head><body>
+<div class="no-print">
+  <button onclick="window.print()" style="background:#1e293b;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Print / Save as PDF</button>
+  <button onclick="igWA('${inv.id}','${inv.customer.replace(/'/g,"\\'")}','${grand.toFixed(2)}')" style="background:#25D366;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;">💬 WhatsApp</button>
+</div>
+<div class="page">
+  <div class="hdr">
+    <div>
+      <div class="logo">${inv.seller?.name||'My Shop'}</div>
+      ${inv.seller?.phone?`<div style="font-size:10px;margin-top:2px;">📞 ${inv.seller.phone}</div>`:''}
+      ${inv.seller?.address?`<div style="font-size:10px;color:#444;margin-top:2px;">${inv.seller.address.replace(/\n/g,'<br>')}</div>`:''}
+    </div>
+    <div class="inv-title">
+      <h2>Tax Invoice / Bill of Supply / Cash Memo</h2>
+      <p style="font-size:10px;">(Original for Recipient)</p>
+    </div>
+  </div>
+  ${(inv.seller?.pan||inv.seller?.gst)?`
+  <div class="gst-row">
+    ${inv.seller?.pan?`<span><b>PAN No:</b> ${inv.seller.pan}</span>`:''}
+    ${inv.seller?.gst?`<span><b>GST No:</b> ${inv.seller.gst}</span>`:''}
+    ${inv.seller?.phone?`<span><b>Phone:</b> ${inv.seller.phone}</span>`:''}
+  </div>`:''}
+  <div class="addrs">
+    <div class="addr"><div class="addr-lbl">Sold By :</div>
+      <b>${inv.seller?.name||''}</b><br>
+      ${(inv.seller?.address||'').replace(/\n/g,'<br>')}
+    </div>
+    <div class="addr"><div class="addr-lbl">Billing Address :</div>
+      <b>${inv.buyer?.name||inv.customer}</b><br>
+      ${(inv.buyer?.address||'').replace(/\n/g,'<br>')}
+      ${inv.buyer?.stateCode?`<br><b>State Code:</b> ${inv.buyer.stateCode}`:''}
+    </div>
+    <div class="addr"><div class="addr-lbl">Shipping Address :</div>
+      <b>${inv.buyer?.name||inv.customer}</b><br>
+      ${(inv.buyer?.address||'').replace(/\n/g,'<br>')}
+      ${inv.buyer?.pos?`<br><b>Place of Supply:</b> ${inv.buyer.pos}`:''}
+      ${inv.buyer?.pod?`<br><b>Place of Delivery:</b> ${inv.buyer.pod}`:''}
+    </div>
+  </div>
+  <div class="meta">
+    <div>
+      ${inv.ordNum?`<div><b>Order No:</b> ${inv.ordNum}</div>`:''}
+    </div>
+    <div style="text-align:right;">
+      <div><b>Invoice No:</b> ${inv.id}</div>
+      <div><b>Invoice Date:</b> ${inv.date}</div>
+      ${inv.reverse&&inv.reverse!=='No'?`<div><b>Reverse Charge:</b> ${inv.reverse}</div>`:''}
+    </div>
+  </div>
+  <table>
+    <thead>${thead}</thead>
+    <tbody>
+      ${itemsHtml}
+      <tr style="background:#f1f5f9;font-weight:700;">
+        <td colspan="${colCount-1}" class="r"><b>TOTAL</b></td>
+        <td class="r b">₹${grand.toFixed(2)}</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="totals-wrap"><div class="totals">${totalsHtml}</div></div>
+  <div class="words"><b>Amount in Words:</b> ${words} Only</div>
+  <div class="sign">
+    <div class="sign-box">
+      <div class="sign-name">For ${inv.seller?.name||'My Shop'}</div>
+      <div class="sign-line"></div>
+      <div style="font-size:9px;color:#666;">Authorised Signature</div>
+    </div>
+  </div>
+  <div class="note">This is a computer generated invoice | Powered by SHOPKEEPER</div>
+</div>
+<script>
+function igWA(num,cust,total){
+  const text='🧾 Invoice: '+num+'\\n👤 Customer: '+cust+'\\n💰 Total: ₹'+total+'\\n\\nPowered by SHOPKEEPER';
+  window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
+}
+<\/script>
+</body></html>`);
+  pw.document.close();
+}
+
+function igToWords(n) {
+  if (!n) return 'Zero';
+  const ones=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+  const tens=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+  function h(x){if(!x)return '';if(x<20)return ones[x]+' ';if(x<100)return tens[Math.floor(x/10)]+(x%10?' '+ones[x%10]:'')+' ';return ones[Math.floor(x/100)]+' Hundred '+(x%100?h(x%100):'');}
+  let r='';
+  const cr=Math.floor(n/10000000);n%=10000000;
+  const lk=Math.floor(n/100000);n%=100000;
+  const th=Math.floor(n/1000);n%=1000;
+  if(cr)r+=h(cr)+'Crore ';if(lk)r+=h(lk)+'Lakh ';if(th)r+=h(th)+'Thousand ';if(n)r+=h(n);
+  return r.trim();
+}
+// ===================================================================
+
 </script>
+<!-- ===== INVOICE GENERATOR OVERLAY ===== -->
+<div class="overlay" id="overlay-invoice-gen" onclick="closeOverlay(event,'overlay-invoice-gen')">
+  <div class="modal" style="max-height:92vh;overflow-y:auto;padding-bottom:100px;">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🧾 Invoice Banao</div>
+
+    <!-- SELLER -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;">
+      <div style="font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🏪 Seller Details</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div style="flex:2;min-width:140px;"><label class="form-label">Business Name *</label><input class="form-input" id="ig-s-name" style="margin:0;" placeholder="My Shop"></div>
+        <div style="flex:1;min-width:100px;"><label class="form-label">Phone</label><input class="form-input" id="ig-s-phone" style="margin:0;" placeholder="+91 98765..."></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
+        <div style="flex:1;min-width:120px;"><label class="form-label">GST No.</label><input class="form-input" id="ig-s-gst" style="margin:0;" placeholder="29AACFV3325K1ZY"></div>
+        <div style="flex:1;min-width:100px;"><label class="form-label">PAN</label><input class="form-input" id="ig-s-pan" style="margin:0;" placeholder="AACFV3325K"></div>
+      </div>
+      <div style="margin-top:6px;"><label class="form-label">Address</label><textarea class="form-input" id="ig-s-addr" rows="2" style="margin:0;resize:none;" placeholder="Shop address..."></textarea></div>
+    </div>
+
+    <!-- BUYER -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;">
+      <div style="font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">👤 Buyer Details</div>
+      <div style="margin-bottom:6px;"><label class="form-label">Customer Select Karo</label>
+        <select class="form-input" id="ig-b-select" style="margin:0;" onchange="igPickCustomer(this.value)">
+          <option value="">— Customer choose karo ya neeche type karo —</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div style="flex:2;min-width:140px;"><label class="form-label">Buyer Name *</label><input class="form-input" id="ig-b-name" style="margin:0;" placeholder="Rahul Sharma"></div>
+        <div style="flex:1;min-width:80px;"><label class="form-label">State Code</label><input class="form-input" id="ig-b-state" style="margin:0;" placeholder="27" value="27"></div>
+      </div>
+      <div style="margin-top:6px;"><label class="form-label">Billing Address</label><textarea class="form-input" id="ig-b-addr" rows="2" style="margin:0;resize:none;" placeholder="Full address..."></textarea></div>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <div style="flex:1;"><label class="form-label">Place of Supply</label><input class="form-input" id="ig-b-pos" style="margin:0;" placeholder="MAHARASHTRA"></div>
+        <div style="flex:1;"><label class="form-label">Place of Delivery</label><input class="form-input" id="ig-b-pod" style="margin:0;" placeholder="MAHARASHTRA"></div>
+      </div>
+    </div>
+
+    <!-- INVOICE META -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;">
+      <div style="font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📋 Invoice Info</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:100px;"><label class="form-label">Invoice No.</label><input class="form-input" id="ig-inv-num" style="margin:0;" placeholder="INV-001"></div>
+        <div style="flex:1;min-width:110px;"><label class="form-label">Order No.</label><input class="form-input" id="ig-ord-num" style="margin:0;" placeholder="ORD-001"></div>
+        <div style="flex:1;min-width:110px;"><label class="form-label">Invoice Date</label><input class="form-input" id="ig-inv-date" type="date" style="margin:0;"></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
+        <div style="flex:1;min-width:120px;"><label class="form-label">GST Type</label>
+          <select class="form-input" id="ig-gst-type" style="margin:0;" onchange="igRecalc()">
+            <option value="cgst_sgst">CGST + SGST (Intra-State)</option>
+            <option value="igst">IGST (Inter-State)</option>
+            <option value="none">No GST</option>
+          </select>
+        </div>
+        <div style="flex:1;min-width:100px;"><label class="form-label">Default GST%</label>
+          <select class="form-input" id="ig-gst-rate" style="margin:0;" onchange="igRecalc()">
+            <option value="5">5%</option><option value="12">12%</option>
+            <option value="18" selected>18%</option><option value="28">28%</option>
+            <option value="0">0% (Exempt)</option>
+          </select>
+        </div>
+        <div style="flex:1;min-width:100px;"><label class="form-label">Reverse Charge</label>
+          <select class="form-input" id="ig-reverse" style="margin:0;"><option value="No">No</option><option value="Yes">Yes</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- ITEMS TABLE -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;">
+      <div style="font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📦 Items</div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:11px;" id="ig-items-tbl">
+          <thead><tr style="background:var(--primary);color:white;">
+            <th style="padding:7px 5px;text-align:left;min-width:120px;">Item Name</th>
+            <th style="padding:7px 4px;width:55px;">HSN</th>
+            <th style="padding:7px 4px;width:65px;">Price ₹</th>
+            <th style="padding:7px 4px;width:40px;">Qty</th>
+            <th style="padding:7px 4px;width:55px;">Net ₹</th>
+            <th style="padding:7px 4px;width:42px;">GST%</th>
+            <th style="padding:7px 4px;width:55px;">Tax ₹</th>
+            <th style="padding:7px 4px;width:65px;text-align:right;">Total ₹</th>
+            <th style="padding:7px 4px;width:24px;"></th>
+          </tr></thead>
+          <tbody id="ig-items-tbody"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+        <button onclick="igAddItem()" style="flex:1;min-width:80px;padding:9px;background:var(--primary);color:white;border:none;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;font-family:'Baloo 2',cursive;">＋ Add Item</button>
+        <button onclick="igAddShipping()" style="flex:1;min-width:80px;padding:9px;background:#dbeafe;color:#2563EB;border:1px solid #2563EB;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;font-family:'Baloo 2',cursive;">🚚 Shipping</button>
+        <button onclick="igFromInventory()" style="flex:1;min-width:80px;padding:9px;background:#dcfce7;color:#16a34a;border:1px solid #16a34a;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;font-family:'Baloo 2',cursive;">📦 Inventory</button>
+      </div>
+    </div>
+
+    <!-- TOTALS PREVIEW -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;" id="ig-totals-wrap">
+      <div style="font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">💰 Total Preview</div>
+      <div id="ig-totals-preview"></div>
+    </div>
+
+    <div class="btn-row" style="position:sticky;bottom:0;background:var(--bg);padding:12px 0;border-top:1px solid var(--border);margin-top:4px;">
+      <button class="btn btn-ghost" onclick="closeById('overlay-invoice-gen')">Cancel</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="igGenerate()">🧾 Generate &amp; Print</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
