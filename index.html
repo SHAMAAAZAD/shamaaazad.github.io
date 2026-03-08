@@ -319,11 +319,124 @@ body{font-family:'Noto Sans',sans-serif;background:linear-gradient(135deg,#1a1a2
 .swipe-hint { position:absolute; bottom:170px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.6); color:white; border-radius:20px; padding:6px 14px; font-size:11px; opacity:0; transition:opacity .4s; pointer-events:none; z-index:40; }
 
 </style>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCckn7fYQIutLPw8qcfHLKVdWJUinMhUYU",
+  authDomain: "shopkeeper-443f2.firebaseapp.com",
+  databaseURL: "https://shopkeeper-443f2-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "shopkeeper-443f2",
+  storageBucket: "shopkeeper-443f2.firebasestorage.app",
+  messagingSenderId: "800016687594",
+  appId: "1:800016687594:web:8a99f7d6c720c0fec9d293"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let _fbSaveTimer = null;
+let _fbListening = false;
+let _lastSavedAt = 0;
+let _lastFbTimestamp = 0;
+
+function showSyncStatus(msg, color) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = color || 'rgba(255,255,255,.8)';
+}
+
+// SAVE to Firebase (debounced 1.5s)
+function fbSave() {
+  clearTimeout(_fbSaveTimer);
+  _fbSaveTimer = setTimeout(function() {
+    showSyncStatus('🔄 Saving...');
+    const payload = {
+      allData: JSON.parse(JSON.stringify(allData)),
+      userAccounts: JSON.parse(JSON.stringify(userAccounts)),
+      updatedAt: Date.now()
+    };
+    db.ref('shopkeeper/data').set(payload)
+      .then(function() {
+        _lastSavedAt = Date.now();
+        _lastFbTimestamp = payload.updatedAt;
+        saveLocalData();
+        showSyncStatus('✅ Synced', 'rgba(100,255,150,.9)');
+      })
+      .catch(function(e) {
+        console.warn('fbSave error:', e);
+        showSyncStatus('📱 Local only', 'rgba(255,200,100,.9)');
+      });
+  }, 1500);
+}
+
+// LOAD from Firebase once
+function fbLoad() {
+  showSyncStatus('🔄 Loading...');
+  db.ref('shopkeeper/data').once('value')
+    .then(function(snap) {
+      const d = snap.val();
+      if (!d || !d.allData) {
+        // Nothing in cloud yet - push local data up
+        showSyncStatus('☁️ Uploading...');
+        fbSave();
+        return;
+      }
+      _mergeCloud(d);
+      _lastFbTimestamp = d.updatedAt || 0;
+      saveLocalData();
+      renderAll();
+      showSyncStatus('✅ Synced', 'rgba(100,255,150,.9)');
+    })
+    .catch(function(e) {
+      console.warn('fbLoad error:', e);
+      showSyncStatus('📵 Offline', 'rgba(255,150,100,.9)');
+    });
+}
+
+// REAL-TIME listener - updates from other devices instantly
+function fbListen() {
+  if (_fbListening) return;
+  _fbListening = true;
+  db.ref('shopkeeper/data').on('value', function(snap) {
+    const d = snap.val();
+    if (!d || !d.updatedAt) return;
+    // Skip if we just saved this (avoid loop)
+    if (Date.now() - _lastSavedAt < 2000) return;
+    if (d.updatedAt === _lastFbTimestamp) return;
+    _lastFbTimestamp = d.updatedAt;
+    _mergeCloud(d);
+    saveLocalData();
+    renderAll();
+    showSyncStatus('🔄 Updated!', 'rgba(100,200,255,.9)');
+  });
+}
+
+// Merge cloud data into local - cloud is source of truth
+function _mergeCloud(d) {
+  if (d.allData) {
+    Object.keys(d.allData).forEach(function(biz) {
+      if (!allData[biz]) allData[biz] = {entries:[],inventoryItems:[],invoices:[],cashbook:[],employees:[],expenses:[]};
+      const s = d.allData[biz];
+      if (s.entries !== undefined) allData[biz].entries = s.entries;
+      if (s.inventoryItems !== undefined) allData[biz].inventoryItems = s.inventoryItems;
+      if (s.invoices !== undefined) allData[biz].invoices = s.invoices;
+      if (s.cashbook !== undefined) allData[biz].cashbook = s.cashbook;
+      if (s.employees !== undefined) allData[biz].employees = s.employees;
+      if (s.expenses !== undefined) allData[biz].expenses = s.expenses;
+    });
+  }
+  if (d.userAccounts && d.userAccounts.length > 0) {
+    userAccounts = d.userAccounts;
+  }
+}
+</script>
 </head>
 <body>
 <div class="phone" id="app">
 
-<!-- PWA --><div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:99999;background:linear-gradient(135deg,#1e3a5f,#2563EB);padding:14px;align-items:center;gap:12px;box-shadow:0 -4px 20px rgba(0,0,0,.4);"><div style="font-size:28px">&#128210;</div><div style="flex:1"><div style="color:white;font-weight:800;font-size:15px">SHOPKEEPER Install Karein!</div><div style="color:rgba(255,255,255,.8);font-size:12px">Home screen par bilkul app jaisi</div></div><button onclick="doPWAInstall()" style="background:white;color:#2563EB;border:none;border-radius:10px;padding:10px 14px;font-weight:800;font-size:14px;cursor:pointer">&#128242; Install</button><button onclick="document.getElementById('pwa-banner').style.display='none'" style="background:rgba(255,255,255,.2);color:white;border:none;border-radius:8px;padding:10px 12px;font-size:15px;cursor:pointer">&#10005;</button></div><div id="install-guide" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.75);align-items:flex-end;justify-content:center"><div style="background:white;border-radius:24px 24px 0 0;padding:24px;width:100%;" onclick="event.stopPropagation()"><div style="font-size:20px;font-weight:800;text-align:center;margin-bottom:16px">&#128242; App Kaise Install Karein?</div><div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px"><div style="background:#f0f9ff;border-radius:12px;padding:12px;display:flex;gap:12px;align-items:center"><span style="background:#2563EB;color:white;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">1</span><div><b>Chrome browser mein open karein</b><br><small>Google Chrome use karna zaroori hai</small></div></div><div style="background:#f0f9ff;border-radius:12px;padding:12px;display:flex;gap:12px;align-items:center"><span style="background:#2563EB;color:white;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">2</span><div><b>3 dots menu &#8594; "Add to Home Screen"</b><br><small>Top right corner mein tap karein</small></div></div><div style="background:#f0f9ff;border-radius:12px;padding:12px;display:flex;gap:12px;align-items:center"><span style="background:#2563EB;color:white;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">3</span><div><b>"Add" tap karein &#x2705;</b><br><small>Home screen par icon aa jaayega!</small></div></div></div><button onclick="document.getElementById('install-guide').style.display='none'" style="width:100%;padding:14px;background:#2563EB;color:white;border:none;border-radius:12px;font-size:17px;font-weight:800;cursor:pointer">&#x2705; Samajh Gaya!</button></div></div><!-- LOGIN SCREEN -->
+<!-- LOGIN SCREEN -->
 <div id="pin-screen">
   <div class="pin-logo">📒 SHOPKEEPER</div>
   <div id="pin-biz-name" style="color:rgba(255,255,255,.7);font-size:13px;margin-bottom:4px;">Pinki Stationary</div>
@@ -364,6 +477,7 @@ body{font-family:'Noto Sans',sans-serif;background:linear-gradient(135deg,#1a1a2
           <button class="refresh-btn" id="refreshBtn" onclick="doRefresh()" title="Refresh all devices">🔄</button>
         </div>
       </div>
+      <div id="sync-status" style="font-size:10px;color:rgba(255,255,255,.8);text-align:right;padding-bottom:2px;">☁️</div>
       <div class="topbar-icons">
         <button class="icon-btn" onclick="openOverlay('overlay-search')">🔍</button>
         <button class="icon-btn" onclick="openShopProfileFull()" title="Shop Profile">🏪</button>
@@ -4471,9 +4585,6 @@ init();
 
 <script>
 var _pp=null;
-window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();_pp=e;var b=document.getElementById('pwa-banner');if(b)b.style.display='flex';});
-window.addEventListener('appinstalled',function(){var b=document.getElementById('pwa-banner');if(b)b.style.display='none';});
-function doPWAInstall(){if(_pp){_pp.prompt();_pp.userChoice.then(function(){_pp=null;document.getElementById('pwa-banner').style.display='none';});}else{var g=document.getElementById('install-guide');if(g)g.style.display='flex';}}
 try{if('serviceWorker'in navigator){var sw='self.addEventListener("install",function(){self.skipWaiting();});';navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(function(){});}}catch(ex){}
 setTimeout(function(){var isA=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone;if(!isA&&!_pp){var g=document.getElementById('install-guide');if(g)g.style.display='flex';}},6000);
 </script>
