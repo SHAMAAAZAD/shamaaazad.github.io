@@ -2124,11 +2124,11 @@ function renderEntries() {
     <div class="entry-card${appState.selectedEntries.has(e.id)?' selected':''}"
       onclick="onEntryClick(${e.id})"
       oncontextmenu="onEntryLongPress(event,${e.id})"
-      ontouchstart="entryTouchStart(${e.id})"
-      ontouchend="entryTouchEnd(event,${e.id})"
+      ontouchstart="startLongPress(${e.id})"
+      ontouchend="cancelLongPress()"
       ontouchmove="cancelLongPress()">
       ${selMode ? `<div class="sel-check">${appState.selectedEntries.has(e.id)?'✓':''}</div>` : ''}
-      <div class="avatar" style="background:${getColor(e.name)}">
+      <div class="avatar" style="background:${getColor(e.name)}" onclick="event.stopPropagation();showPhoto(${e.id})">
         ${e.photo ? `<img src="${e.photo}" alt="${e.name[0]}">` : `<span>${e.name[0]}</span>`}
       </div>
       <div class="entry-info">
@@ -2148,26 +2148,8 @@ function renderEntries() {
 }
 
 let longPressTimer = null;
-let _touchT = 0, _touchMoved = false;
-
-function entryTouchStart(id) {
-  _touchT = Date.now();
-  _touchMoved = false;
-  longPressTimer = setTimeout(() => { toggleEntrySelect(id); }, 650);
-}
-function entryTouchEnd(e, id) {
-  clearTimeout(longPressTimer);
-  if (_touchMoved) return;
-  const dur = Date.now() - _touchT;
-  if (dur < 500) {
-    e.preventDefault(); // click event ko block karo (duplicate na chale)
-    if (appState.selectedEntries.size > 0) toggleEntrySelect(id);
-    else openDetail(id);
-  }
-}
 function startLongPress(id) {
-  _touchT = Date.now();
-  longPressTimer = setTimeout(() => { toggleEntrySelect(id); }, 650);
+  longPressTimer = setTimeout(() => { toggleEntrySelect(id); }, 600);
 }
 function cancelLongPress() { clearTimeout(longPressTimer); }
 function onEntryClick(id) {
@@ -2257,12 +2239,8 @@ function downloadSharePDF() { generateAndPrintPDF(appState._shareTitle, appState
 // ===== DETAIL =====
 function openDetail(id) {
   appState.currentDetail = cd().entries.find(e => e.id === id);
-  if (!appState.currentDetail) {
-    showToast('❌ Entry nahi mili: ' + id);
-    return;
-  }
+  if (!appState.currentDetail) return;
   const e = appState.currentDetail;
-  if (!e.txns) e.txns = [];
   document.getElementById('detail-name').textContent = e.name;
   document.getElementById('detail-sub').textContent = e.type.toUpperCase() + ' • ' + (e.phone || 'N/A') + (e.address?' • '+e.address:'');
   document.getElementById('detail-balance').innerHTML = `
@@ -2949,6 +2927,11 @@ let saleLongPressTimer = null;
 let saleSelectMode = false;
 
 function renderSale() {
+  // Screen switch ke baad bhi quantities yaad rahe
+  try {
+    const saved = localStorage.getItem('sk_sale_qtys');
+    if (saved) { const p = JSON.parse(saved); Object.assign(saleQtys, p); }
+  } catch(e){}
   const items = cd().inventoryItems;
   saleSelectMode = saleSelectedItems.size > 0;
 
@@ -2982,14 +2965,12 @@ function renderSale() {
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
           <div class="qty-control">
-            <button class="qty-btn qty-minus" onclick="changeQty(${p.id},-1)" ${(p.stock||0)===0?'disabled style="opacity:.4"':''}>−</button>
+            <button class="qty-btn qty-minus" onclick="changeQty(${p.id},-1)">−</button>
             <span class="qty-num" id="qty-${p.id}">${saleQtys[p.id]||0}</span>
-            <button class="qty-btn qty-plus" onclick="changeQty(${p.id},1)" ${(p.stock||0)===0?'disabled style="opacity:.4"':''}>＋</button>
+            <button class="qty-btn qty-plus" onclick="changeQty(${p.id},1)">＋</button>
           </div>
-          <div id="stock-${p.id}" style="font-size:10px;font-weight:600;text-align:right;margin-top:4px;color:${(p.stock||0)===0?'#ef4444':(p.stock||0)<=5?'#f59e0b':'#22c55e'};">${(p.stock||0)===0?'❌ Stock nahi':'📦 Stock: '+((p.stock||0)-(saleQtys[p.id]||0))}</div>
-          <div style="display:none">
-          </div>
-          <button onclick="editSaleItem(${p.id})" style="background:var(--primary-light);color:var(--primary);border:none;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;">✏️ Edit</button>
+          <div id="stock-${p.id}" style="font-size:10px;font-weight:600;text-align:right;margin-top:2px;color:${!(p.stock)?'#aaa':(p.stock-(saleQtys[p.id]||0))<=2?'#ef4444':(p.stock-(saleQtys[p.id]||0))<=5?'#f59e0b':'#16a34a'};">${!(p.stock)?'':'📦 '+(p.stock-(saleQtys[p.id]||0))+' bache'}</div>
+          <button onclick="editSaleItem(${p.id})" style="background:var(--primary-light);color:var(--primary);border:none;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;margin-top:2px;">✏️ Edit</button>
         </div>
       </div>`;
     }).join('')}` : `
@@ -3208,22 +3189,29 @@ function removeCustomItem(id) {
 
 function changeQty(id, d) {
   const item = cd().inventoryItems.find(i => i.id == id);
-  const maxStock = item ? (item.stock || 0) : 9999;
   const cur = saleQtys[id] || 0;
   const next = Math.max(0, cur + d);
-  if (d > 0 && maxStock > 0 && next > maxStock) {
-    showToast('⚠️ Sirf ' + maxStock + ' stock available hai!'); return;
+  // Sirf tab rok jab stock set ho aur limit cross ho
+  if (d > 0 && item && item.stock > 0 && next > item.stock) {
+    showToast('⚠️ Sirf ' + item.stock + ' stock available hai!'); return;
   }
   saleQtys[id] = next;
+  // Qty badge update
   const el = document.getElementById('qty-' + id);
   if (el) el.textContent = next;
-  // Color stock indicator
+  // Stock remaining badge update
   const stockEl = document.getElementById('stock-' + id);
-  if (stockEl && item) {
-    const rem = maxStock - next;
-    stockEl.textContent = rem + ' bache';
-    stockEl.style.color = rem <= 2 ? '#ef4444' : rem <= 5 ? '#f59e0b' : '#16a34a';
+  if (stockEl) {
+    if (!item || !item.stock) {
+      stockEl.textContent = '';
+    } else {
+      const rem = item.stock - next;
+      stockEl.textContent = '📦 ' + rem + ' bache';
+      stockEl.style.color = rem <= 2 ? '#ef4444' : rem <= 5 ? '#f59e0b' : '#16a34a';
+    }
   }
+  // localStorage mein save - screen switch pe bhi rahe
+  try { localStorage.setItem('sk_sale_qtys', JSON.stringify(saleQtys)); } catch(e){}
   updateSaleTotal();
 }
 function updateSaleTotal() {
@@ -3266,6 +3254,7 @@ function saveSaleAsInvoice() {
   });
   saleQtys = {};
   customSaleItems = [];
+  try { localStorage.removeItem('sk_sale_qtys'); } catch(e){}
   saveAll();
   renderSale();
   renderInvoices();
