@@ -564,8 +564,8 @@ function _mergeCloud(d) {
   <div id="detail-net-balance" class="net-balance-chip"></div>
 
   <div style="display:flex;gap:8px;padding:8px 14px;background:var(--surface);border-bottom:1px solid var(--border);">
-    <button class="btn btn-green" style="flex:1;padding:10px;" onclick="openOverlay('overlay-add-txn')">＋ You Got</button>
-    <button class="btn btn-danger" style="flex:1;padding:10px;" onclick="setTxnTypeGave();openOverlay('overlay-add-txn')">− You Gave</button>
+    <button class="btn btn-green" style="flex:1;padding:10px;" onclick="openOverlay('overlay-add-txn')">＋ Saman Diya</button>
+    <button class="btn btn-danger" style="flex:1;padding:10px;" onclick="setTxnTypeGave();openOverlay('overlay-add-txn')">− Paise Liye</button>
     <button class="btn btn-ghost" style="padding:10px 12px;" onclick="openOverlay('overlay-add-customer')">✏️</button>
     <button class="btn btn-danger" style="padding:10px 12px;" onclick="deleteCurrentEntry()">🗑️</button>
   </div>
@@ -1047,8 +1047,8 @@ function _mergeCloud(d) {
     <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="txn-date" type="datetime-local"></div>
     <div class="form-group"><label class="form-label">Type</label>
       <div class="radio-group">
-        <div class="radio-btn selected-r" id="txn-got" onclick="selectTxnType('got')">💰 You Got</div>
-        <div class="radio-btn" id="txn-gave" onclick="selectTxnType('gave')">💸 You Gave</div>
+        <div class="radio-btn selected-r" id="txn-got" onclick="selectTxnType('got')">💰 Saman Diya</div>
+        <div class="radio-btn" id="txn-gave" onclick="selectTxnType('gave')">💸 Paise Liye</div>
       </div>
     </div>
     <div class="btn-row">
@@ -1227,8 +1227,8 @@ function _mergeCloud(d) {
     <div class="form-group">
       <label class="form-label">Transaction Type</label>
       <select class="form-input" id="edit-txn-type">
-        <option value="receivable">💰 You Got (Receivable)</option>
-        <option value="payable">💸 You Gave (Payable)</option>
+        <option value="receivable">💰 Saman Diya (Receivable)</option>
+        <option value="payable">💸 Paise Liye (Payable)</option>
       </select>
     </div>
     <div class="form-group">
@@ -2241,6 +2241,8 @@ function openDetail(id) {
   appState.currentDetail = cd().entries.find(e => e.id === id);
   if (!appState.currentDetail) return;
   const e = appState.currentDetail;
+  // Fix: ensure txns array always exists
+  if (!e.txns) e.txns = [];
   document.getElementById('detail-name').textContent = e.name;
   document.getElementById('detail-sub').textContent = e.type.toUpperCase() + ' • ' + (e.phone || 'N/A') + (e.address?' • '+e.address:'');
   document.getElementById('detail-balance').innerHTML = `
@@ -2264,6 +2266,9 @@ function openDetail(id) {
 
 function renderDetailTxns() {
   const e = appState.currentDetail;
+  if (!e) return;
+  // Fix: ensure txns array always exists before rendering
+  if (!e.txns) e.txns = [];
   const txnDiv = document.getElementById('detail-txns');
   const selMode = appState.selectedTxns.size > 0;
   const txnFilterType = appState.txnFilter || 'All';
@@ -2279,7 +2284,9 @@ function renderDetailTxns() {
   const filterBar = `<div style="display:flex;gap:6px;padding:0 0 8px;overflow-x:auto;">
     ${allTypes.map(t => `<div onclick="filterDetailTxns('${t}')" id="dtf-${t}" style="background:${(appState.txnFilter||'All')===t?'var(--primary)':'var(--surface)'};color:${(appState.txnFilter||'All')===t?'white':'var(--text2)'};border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">${t==='receivable'?'💰 Got':t==='payable'?'💸 Gave':'All'}</div>`).join('')}
   </div>`;
-  txnDiv.innerHTML = filterBar + `<div class="section-title">Transaction History <span style="font-size:10px;font-weight:400;color:var(--text3);">Long press to select</span></div>` + filteredTxns.map(t => {
+  const filteredContent = filteredTxns.length === 0
+    ? `<div style="text-align:center;padding:30px;color:var(--text3)"><div style="font-size:36px">🔍</div><div style="font-size:13px;font-weight:600;margin-top:8px">Is filter mein koi transaction nahi</div></div>`
+    : filteredTxns.map(t => {
     const canEdit = !t.editDeadline || new Date() <= new Date(t.editDeadline);
     return `
     <div class="txn-item${appState.selectedTxns.has(t.id)?' selected':''}"
@@ -2297,6 +2304,7 @@ function renderDetailTxns() {
       </div>
     </div>`;
   }).join('');
+  txnDiv.innerHTML = filterBar + `<div class="section-title">Transaction History <span style="font-size:10px;font-weight:400;color:var(--text3);">Long press to select</span></div>` + filteredContent;
 }
 
 let txnLongPressTimer = null;
@@ -2927,11 +2935,6 @@ let saleLongPressTimer = null;
 let saleSelectMode = false;
 
 function renderSale() {
-  // Screen switch ke baad bhi quantities yaad rahe
-  try {
-    const saved = localStorage.getItem('sk_sale_qtys');
-    if (saved) { const p = JSON.parse(saved); Object.assign(saleQtys, p); }
-  } catch(e){}
   const items = cd().inventoryItems;
   saleSelectMode = saleSelectedItems.size > 0;
 
@@ -2965,12 +2968,14 @@ function renderSale() {
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
           <div class="qty-control">
-            <button class="qty-btn qty-minus" onclick="changeQty(${p.id},-1)">−</button>
+            <button class="qty-btn qty-minus" onclick="changeQty(${p.id},-1)" ${(p.stock||0)===0?'disabled style="opacity:.4"':''}>−</button>
             <span class="qty-num" id="qty-${p.id}">${saleQtys[p.id]||0}</span>
-            <button class="qty-btn qty-plus" onclick="changeQty(${p.id},1)">＋</button>
+            <button class="qty-btn qty-plus" onclick="changeQty(${p.id},1)" ${(p.stock||0)===0?'disabled style="opacity:.4"':''}>＋</button>
           </div>
-          <div id="stock-${p.id}" style="font-size:10px;font-weight:600;text-align:right;margin-top:2px;color:${!(p.stock)?'#aaa':(p.stock-(saleQtys[p.id]||0))<=2?'#ef4444':(p.stock-(saleQtys[p.id]||0))<=5?'#f59e0b':'#16a34a'};">${!(p.stock)?'':'📦 '+(p.stock-(saleQtys[p.id]||0))+' bache'}</div>
-          <button onclick="editSaleItem(${p.id})" style="background:var(--primary-light);color:var(--primary);border:none;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;margin-top:2px;">✏️ Edit</button>
+          <div id="stock-${p.id}" style="font-size:10px;font-weight:600;text-align:right;margin-top:4px;color:${(p.stock||0)===0?'#ef4444':(p.stock||0)<=5?'#f59e0b':'#22c55e'};">${(p.stock||0)===0?'❌ Stock nahi':'📦 Stock: '+((p.stock||0)-(saleQtys[p.id]||0))}</div>
+          <div style="display:none">
+          </div>
+          <button onclick="editSaleItem(${p.id})" style="background:var(--primary-light);color:var(--primary);border:none;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;">✏️ Edit</button>
         </div>
       </div>`;
     }).join('')}` : `
@@ -3189,29 +3194,22 @@ function removeCustomItem(id) {
 
 function changeQty(id, d) {
   const item = cd().inventoryItems.find(i => i.id == id);
+  const maxStock = item ? (item.stock || 0) : 9999;
   const cur = saleQtys[id] || 0;
   const next = Math.max(0, cur + d);
-  // Sirf tab rok jab stock set ho aur limit cross ho
-  if (d > 0 && item && item.stock > 0 && next > item.stock) {
-    showToast('⚠️ Sirf ' + item.stock + ' stock available hai!'); return;
+  if (d > 0 && maxStock > 0 && next > maxStock) {
+    showToast('⚠️ Sirf ' + maxStock + ' stock available hai!'); return;
   }
   saleQtys[id] = next;
-  // Qty badge update
   const el = document.getElementById('qty-' + id);
   if (el) el.textContent = next;
-  // Stock remaining badge update
+  // Color stock indicator
   const stockEl = document.getElementById('stock-' + id);
-  if (stockEl) {
-    if (!item || !item.stock) {
-      stockEl.textContent = '';
-    } else {
-      const rem = item.stock - next;
-      stockEl.textContent = '📦 ' + rem + ' bache';
-      stockEl.style.color = rem <= 2 ? '#ef4444' : rem <= 5 ? '#f59e0b' : '#16a34a';
-    }
+  if (stockEl && item) {
+    const rem = maxStock - next;
+    stockEl.textContent = rem + ' bache';
+    stockEl.style.color = rem <= 2 ? '#ef4444' : rem <= 5 ? '#f59e0b' : '#16a34a';
   }
-  // localStorage mein save - screen switch pe bhi rahe
-  try { localStorage.setItem('sk_sale_qtys', JSON.stringify(saleQtys)); } catch(e){}
   updateSaleTotal();
 }
 function updateSaleTotal() {
@@ -3254,7 +3252,6 @@ function saveSaleAsInvoice() {
   });
   saleQtys = {};
   customSaleItems = [];
-  try { localStorage.removeItem('sk_sale_qtys'); } catch(e){}
   saveAll();
   renderSale();
   renderInvoices();
