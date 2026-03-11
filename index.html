@@ -26,9 +26,126 @@ body { font-family: var(--font-main) !important; }
   --radius:14px;--shadow:0 2px 16px rgba(0,0,0,.08);--shadow-lg:0 8px 32px rgba(0,0,0,.14);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-body{font-family:'Noto Sans',sans-serif;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);display:flex;justify-content:center;align-items:center;min-height:100vh;min-height:100dvh;padding:0;}@media(min-width:480px){body{padding:16px;}}
+body{font-family:'Noto Sans',sans-serif;background:var(--bg);display:flex;justify-content:center;align-items:center;min-height:100vh;min-height:100dvh;padding:0;}
+
+/* Phone (default - <768px): full screen mobile */
 .phone{width:100%;height:100vh;height:100dvh;background:var(--bg);border-radius:0;box-shadow:none;overflow:hidden;position:relative;display:flex;flex-direction:column;max-width:100%;}
-@media(min-width:480px){.phone{width:390px;height:844px;border-radius:40px;box-shadow:0 32px 80px rgba(0,0,0,.4),0 0 0 10px #1a1a2e,0 0 0 12px #333;max-width:390px;}}
+
+/* Tablet (768px-1024px): centered card */
+@media(min-width:768px) and (max-width:1023px){
+  body{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);padding:20px;}
+  .phone{width:420px;height:92vh;max-height:900px;border-radius:36px;box-shadow:0 32px 80px rgba(0,0,0,.4),0 0 0 10px #1a1a2e,0 0 0 12px #333;max-width:420px;}
+}
+
+/* Desktop (1024px+): full website layout with sidebar */
+@media(min-width:1024px){
+  body{background:#f1f5f9;padding:0;align-items:stretch;width:100%;justify-content:flex-start;}
+
+  /* App = sidebar + content flex row */
+  #app{
+    display:flex!important;
+    flex-direction:row!important;
+    width:100vw!important;
+    height:100vh!important;
+    overflow:hidden!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    background:#f1f5f9!important;
+    max-width:100%!important;
+  }
+
+  /* Hide original bottom nav and bar */
+  .bottom-nav{ display:none!important; }
+  .bottom-bar{ display:none!important; }
+
+  /* Content area fills remaining width */
+  .screen{
+    flex:1!important;
+    height:100vh!important;
+    overflow:hidden!important;
+    max-width:calc(100vw - 220px)!important;
+    display:none!important;
+    flex-direction:column!important;
+  }
+  .screen.active{
+    display:flex!important;
+  }
+
+  /* Topbar adjustments */
+  .topbar{ padding:16px 24px 0!important; }
+  .balance-amount{ font-size:22px!important; }
+  .balance-row{ gap:14px!important; padding:12px 0 14px!important; }
+
+  /* List */
+  .list-area{ padding:14px 20px 80px!important; }
+  .entry-card{ padding:14px 16px!important; border-radius:14px!important; }
+  .entry-name{ font-size:14px!important; }
+  .tab{ font-size:12px!important; padding:11px 6px!important; }
+
+  /* FAB */
+  .fab-group{ right:24px!important; bottom:20px!important; }
+
+  /* Modals centered */
+  .overlay{ align-items:center!important; justify-content:center!important; }
+  .modal{ border-radius:18px!important; max-width:560px!important; width:90%!important; max-height:88vh!important; }
+
+  /* Detail + inner screens */
+  .detail-topbar{ padding:16px 24px!important; }
+  .inner-screen{ padding:16px 24px 80px!important; }
+
+  /* PIN screen covers content area only */
+  #pin-screen{ position:fixed!important; inset:0!important; }
+}
+
+
+/* ===== DESKTOP SIDEBAR (injected) ===== */
+#desktop-sidebar{
+  display:none;
+  flex-direction:column;
+  width:220px;
+  min-width:220px;
+  height:100vh;
+  background:white;
+  border-right:1px solid var(--border);
+  box-shadow:2px 0 12px rgba(0,0,0,.07);
+  flex-shrink:0;
+  overflow-y:auto;
+  z-index:10;
+}
+#desktop-sidebar .dsb-logo{
+  font-family:'Baloo 2',cursive;
+  font-size:15px;
+  font-weight:800;
+  color:var(--primary);
+  padding:20px 20px 16px;
+  border-bottom:1px solid var(--border);
+  letter-spacing:.3px;
+}
+#desktop-sidebar .dsb-item{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  width:100%;
+  padding:12px 20px;
+  border:none;
+  background:none;
+  cursor:pointer;
+  border-left:3px solid transparent;
+  font-size:13px;
+  font-weight:600;
+  color:var(--text2);
+  transition:all .15s;
+  text-align:left;
+}
+#desktop-sidebar .dsb-item:hover{background:var(--primary-light);color:var(--primary);}
+#desktop-sidebar .dsb-item.active{background:var(--primary-light);border-left-color:var(--primary);color:var(--primary);}
+#desktop-sidebar .dsb-icon{font-size:18px;width:22px;text-align:center;}
+#desktop-sidebar .dsb-divider{height:1px;background:var(--border);margin:8px 16px;}
+#desktop-sidebar .dsb-section{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;padding:8px 20px 4px;}
+@media(min-width:1024px){
+  #desktop-sidebar{display:flex!important;}
+  body{overflow:hidden;}
+}
 
 /* PIN LOCK */
 #pin-screen{position:absolute;inset:0;background:linear-gradient(160deg,#1e3a5f,#0f172a);z-index:9999;display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:20px;}#pin-screen.hidden{display:none!important;}
@@ -435,6 +552,19 @@ function _mergeCloud(d) {
 </head>
 <body>
 <div class="phone" id="app">
+<div id="desktop-sidebar">
+  <div class="dsb-logo">🏪 SHOPKEEPER</div>
+  <div class="dsb-section">Main Menu</div>
+  <button class="dsb-item active" id="dsb-cashbook" onclick="dsbNav('cashbook')"><span class="dsb-icon">📖</span>Cashbook</button>
+  <button class="dsb-item" id="dsb-inventory" onclick="dsbNav('inventory')"><span class="dsb-icon">📦</span>Inventory</button>
+  <button class="dsb-item" id="dsb-invoices" onclick="dsbNav('invoices')"><span class="dsb-icon">🧾</span>Invoices</button>
+  <button class="dsb-item" id="dsb-sale" onclick="dsbNav('sale')"><span class="dsb-icon">🛒</span>New Sale</button>
+  <div class="dsb-divider"></div>
+  <div class="dsb-section">More</div>
+  <button class="dsb-item" id="dsb-payroll" onclick="dsbNav('payroll')"><span class="dsb-icon">👥</span>Payroll</button>
+  <button class="dsb-item" id="dsb-expenses" onclick="dsbNav('expenses')"><span class="dsb-icon">💳</span>Expenses</button>
+  <button class="dsb-item" id="dsb-settings" onclick="dsbNav('settings')"><span class="dsb-icon">⚙️</span>Settings</button>
+</div>
 
 <!-- LOGIN SCREEN -->
 <div id="pin-screen">
@@ -2954,9 +3084,10 @@ function renderSale() {
       <div class="sale-product${isSel ? ' selected' : ''}"
         id="sp-${p.id}"
         ontouchstart="saleLPStart(${p.id})" ontouchend="saleLPEnd()" ontouchcancel="saleLPEnd()"
-        oncontextmenu="event.preventDefault();toggleSaleSelect(${p.id})">
-        ${saleSelectMode ? `<div onclick="toggleSaleSelect(${p.id})" style="width:22px;height:22px;border-radius:50%;border:2px solid ${isSel?'var(--primary)':'var(--border)'};background:${isSel?'var(--primary)':'white'};display:flex;align-items:center;justify-content:center;font-size:12px;color:white;flex-shrink:0;cursor:pointer;">${isSel?'✓':''}</div>` : ''}
-        <div onclick="${p.photo ? `showSalePhoto('${p.photo}')` : ''}" style="cursor:${p.photo?'pointer':'default'};flex-shrink:0;">
+        oncontextmenu="event.preventDefault();toggleSaleSelect(${p.id})"
+        onclick="${saleSelectMode ? `toggleSaleSelect(${p.id})` : ''}">
+        ${saleSelectMode ? `<div onclick="event.stopPropagation();toggleSaleSelect(${p.id})" style="width:22px;height:22px;border-radius:50%;border:2px solid ${isSel?'var(--primary)':'var(--border)'};background:${isSel?'var(--primary)':'white'};display:flex;align-items:center;justify-content:center;font-size:12px;color:white;flex-shrink:0;cursor:pointer;">${isSel?'✓':''}</div>` : ''}
+        <div onclick="event.stopPropagation();${p.photo ? `showSalePhoto('${p.photo}')` : ''}" style="cursor:${p.photo?'pointer':'default'};flex-shrink:0;">
           ${p.photo
             ? `<img src="${p.photo}" style="width:44px;height:44px;border-radius:10px;object-fit:cover;border:2px solid ${isSel?'var(--primary)':'var(--border)'};">`
             : `<div style="width:44px;height:44px;border-radius:10px;background:${getColor(p.name)};display:flex;align-items:center;justify-content:center;color:white;font-size:20px;font-family:'Baloo 2',cursive;font-weight:700;">${p.name[0]}</div>`}
@@ -2966,16 +3097,14 @@ function renderSale() {
           <div style="font-size:12px;color:var(--primary);font-family:'Baloo 2',cursive;font-weight:700">${fmt(p.price)}</div>
           ${p.category ? `<div style="font-size:10px;color:var(--text3);">${p.category}</div>` : ''}
         </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;" onclick="event.stopPropagation()">
           <div class="qty-control">
-            <button class="qty-btn qty-minus" onclick="changeQty(${p.id},-1)" ${(p.stock||0)===0?'disabled style="opacity:.4"':''}>−</button>
+            <button class="qty-btn qty-minus" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation();changeQty(${p.id},-1)" ${(p.stock||0)===0?'disabled style="opacity:.4"':''}>−</button>
             <span class="qty-num" id="qty-${p.id}">${saleQtys[p.id]||0}</span>
-            <button class="qty-btn qty-plus" onclick="changeQty(${p.id},1)" ${(p.stock||0)===0?'disabled style="opacity:.4"':''}>＋</button>
+            <button class="qty-btn qty-plus" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation();changeQty(${p.id},1)" ${(p.stock||0)===0?'disabled style="opacity:.4"':''}>＋</button>
           </div>
           <div id="stock-${p.id}" style="font-size:10px;font-weight:600;text-align:right;margin-top:4px;color:${(p.stock||0)===0?'#ef4444':(p.stock||0)<=5?'#f59e0b':'#22c55e'};">${(p.stock||0)===0?'❌ Stock nahi':'📦 Stock: '+((p.stock||0)-(saleQtys[p.id]||0))}</div>
-          <div style="display:none">
-          </div>
-          <button onclick="editSaleItem(${p.id})" style="background:var(--primary-light);color:var(--primary);border:none;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;">✏️ Edit</button>
+          <button ontouchstart="event.stopPropagation()" onclick="event.stopPropagation();editSaleItem(${p.id})" style="background:var(--primary-light);color:var(--primary);border:none;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;">✏️ Edit</button>
         </div>
       </div>`;
     }).join('')}` : `
@@ -3012,6 +3141,9 @@ function renderSale() {
 
 // Long press for bulk select
 function saleLPStart(id) {
+  // Don't trigger long press if user touched a button
+  const target = event && event.target;
+  if (target && (target.tagName === 'BUTTON' || target.closest('button'))) return;
   saleLongPressTimer = setTimeout(() => { toggleSaleSelect(id); }, 600);
 }
 function saleLPEnd() { clearTimeout(saleLongPressTimer); }
@@ -3298,7 +3430,14 @@ function saveBusiness() {
 }
 function updateMoreBizName() {
   const biz = businesses.find(b=>b.id===appState.currentBizId);
-  if (biz) { document.getElementById('more-biz-name').textContent = biz.name; document.getElementById('home-biz-name').textContent = biz.name; }
+  // home-biz-name uses shopProfile.name (what user sets in Settings)
+  // more-biz-name uses biz.name (business switcher)
+  const homeNameEl = document.getElementById('home-biz-name');
+  const shopName = (shopProfile && shopProfile.name) ? shopProfile.name : (biz ? biz.name : 'My Shop');
+  if (homeNameEl) homeNameEl.textContent = shopName;
+  document.title = shopName;
+  const moreBizEl = document.getElementById('more-biz-name');
+  if (biz && moreBizEl) moreBizEl.textContent = biz.name;
 }
 
 // ===== PHOTOS =====
@@ -3578,6 +3717,20 @@ function showScreen(id) {
   document.getElementById('screen-'+id)?.classList.add('active');
 }
 function goHome() { showScreen('home'); closeFab(); }
+
+function dsbNav(id) {
+  // Update sidebar active state
+  document.querySelectorAll('#desktop-sidebar .dsb-item').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('dsb-' + id);
+  if (btn) btn.classList.add('active');
+  showNavScreen(id);
+}
+function updateDsbActive(id) {
+  document.querySelectorAll('#desktop-sidebar .dsb-item').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('dsb-' + id);
+  if (btn) btn.classList.add('active');
+}
+
 function showNavScreen(id) {
   // Rights check before showing screen
   const user = appState.loggedInUser;
@@ -4137,7 +4290,11 @@ function saveShopProfile() {
   shopProfile.footer = document.getElementById('sp-footer').value.trim();
   // Save to localStorage
   try { localStorage.setItem('shopkeeper_profile', JSON.stringify(shopProfile)); } catch(e){}
-  // Update settings display
+  // Update ALL name displays across the app
+  const shopName = shopProfile.name || 'My Shop';
+  const homeBizName = document.getElementById('home-biz-name');
+  if (homeBizName) homeBizName.textContent = shopName;
+  document.title = shopName;
   updateSettingsShopDisplay();
   closeById('overlay-shop-profile');
   saveAll();
@@ -4150,6 +4307,11 @@ function loadShopProfile() {
     if (saved) { Object.assign(shopProfile, JSON.parse(saved)); }
   } catch(e){}
   updateSettingsShopDisplay();
+  // Fix: update home screen name on load
+  const shopName = shopProfile.name || 'My Shop';
+  const homeBizName = document.getElementById('home-biz-name');
+  if (homeBizName) homeBizName.textContent = shopName;
+  document.title = shopName;
 }
 
 function updateSettingsShopDisplay() {
@@ -4578,10 +4740,17 @@ function saveShopProfileFull() {
   // Save to localStorage
   try { localStorage.setItem('shopkeeper_profile', JSON.stringify(sp)); } catch(e){}
   showToast('✅ Shop Profile save ho gaya!');
-  // Update header name
+  // Update ALL name displays across the app
+  const shopName = sp.name || 'My Shop';
   const hn = document.getElementById('spf-header-name');
-  if (hn) hn.textContent = sp.name || 'My Shop';
+  if (hn) hn.textContent = shopName;
+  const homeBizName = document.getElementById('home-biz-name');
+  if (homeBizName) homeBizName.textContent = shopName;
+  const settingsName = document.getElementById('settings-shop-name');
+  if (settingsName) settingsName.textContent = shopName + (sp.gstin ? ' ✓' : ' — Fill Profile');
+  document.title = shopName;
   updateSettingsShopDisplay();
+  saveAll();
 }
 
 function handleShopLogoFull(input) {
