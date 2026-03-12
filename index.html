@@ -575,6 +575,7 @@ function _mergeCloud(d) {
     <div style="position:relative;">
       <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;">📱</span>
       <input id="login-phone" type="tel" placeholder="Phone Number (e.g. 8802138092)"
+        oninput="tryAutoLogin()"
         style="width:100%;padding:16px 16px 16px 44px;border-radius:12px;border:2px solid rgba(255,255,255,.2);background:rgba(255,255,255,.15);color:white;font-size:16px;outline:none;-webkit-appearance:none;-webkit-text-fill-color:white;"
         oninput="this.style.borderColor='rgba(255,255,255,.4)'"
       >
@@ -583,7 +584,7 @@ function _mergeCloud(d) {
       <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;">🔒</span>
       <input id="login-pass" type="password" placeholder="Password"
         style="width:100%;padding:16px 16px 16px 44px;border-radius:12px;border:2px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:white;font-size:16px;font-family:'Baloo 2',cursive;outline:none;"
-        oninput="this.style.borderColor='rgba(255,255,255,.4)'"
+        oninput="this.style.borderColor='rgba(255,255,255,.4)'; tryAutoLogin();"
         onkeydown="if(event.key==='Enter') doLogin()"
       >
     </div>
@@ -1781,6 +1782,40 @@ let allData = {
 function cd() { return allData[appState.currentBizId]; }
 
 // ===== LOGIN SYSTEM =====
+function tryAutoLogin() {
+  const phone = (document.getElementById('login-phone').value || '').trim().replace(/\s+/g,'');
+  const pass  = (document.getElementById('login-pass').value  || '').trim();
+  if (!phone || !pass) return;
+  loadLocalData();
+  let matched = null;
+  for (let u of userAccounts) {
+    if ((u.phone||'').replace(/[^0-9]/g,'').slice(-10) === phone.replace(/[^0-9]/g,'').slice(-10) &&
+        (u.password||'').trim() === pass) { matched = u; break; }
+  }
+  if (!matched) {
+    for (let biz of Object.values(allData)) {
+      for (let emp of (biz.employees||[])) {
+        if ((emp.phone||'').replace(/[^0-9]/g,'').slice(-10) === phone.replace(/[^0-9]/g,'').slice(-10) &&
+            (emp.password||'').trim() === pass) {
+          matched = {phone, password:pass, name:emp.name, role:'staff', rights:emp.rights||{}};
+          break;
+        }
+      }
+      if (matched) break;
+    }
+  }
+  if (matched) {
+    appState.loggedInUser = matched;
+    document.getElementById('pin-screen').classList.add('hidden');
+    document.getElementById('login-phone').value = '';
+    document.getElementById('login-pass').value = '';
+    document.getElementById('pin-prompt').textContent = 'Apna Phone Number aur Password dalein';
+    document.getElementById('pin-prompt').style.color = '';
+    applyUserRights(matched);
+    showToast('🔓 Welcome, ' + matched.name + '!');
+  }
+}
+
 function doLogin() {
   // Reload localStorage data fresh before checking (fixes same-device staff login)
   loadLocalData();
