@@ -215,10 +215,10 @@ body{font-family:'Noto Sans',sans-serif;background:var(--bg);display:flex;justif
 .entry-amount{text-align:right;flex-shrink:0;}
 .entry-amount .amount{font-family:'Baloo 2',cursive;font-size:15px;font-weight:700;}
 .entry-amount .kind{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;}
-.amount.receivable{color:var(--green);}
-.amount.payable{color:var(--red);}
-.kind.receivable{color:var(--green);}
-.kind.payable{color:var(--red);}
+.amount.receivable{color:var(--red);}
+.amount.payable{color:var(--green);}
+.kind.receivable{color:var(--red);}
+.kind.payable{color:var(--green);}
 .amount.hidden{filter:blur(4px);}
 
 /* SELECTION BAR */
@@ -616,12 +616,12 @@ function _mergeCloud(d) {
       </div>
     </div>
     <div class="balance-row">
-      <div class="balance-card" onclick="openOverlay('overlay-balance')" style="background:rgba(220,38,38,0.25);border-color:rgba(220,38,38,0.4);">
+      <div class="balance-card" onclick="openOverlay('overlay-balance')" style="background:rgba(22,163,74,0.30);border:1.5px solid rgba(100,220,130,0.6);">
         <div class="balance-label">💸 Payable</div>
         <div class="balance-amount" id="pay-amount">₹0</div>
       </div>
-      <div class="balance-card" onclick="openOverlay('overlay-balance')" style="background:rgba(22,163,74,0.30);border:1.5px solid rgba(100,220,130,0.6);">
-        <div class="balance-label" style="color:rgba(180,255,200,0.95);">💰 Receivable</div>
+      <div class="balance-card" onclick="openOverlay('overlay-balance')" style="background:rgba(220,38,38,0.25);border-color:rgba(220,38,38,0.4);">
+        <div class="balance-label" style="color:rgba(255,200,200,0.95);">💰 Receivable</div>
         <div class="balance-amount" id="rec-amount">₹0</div>
       </div>
     </div>
@@ -651,6 +651,14 @@ function _mergeCloud(d) {
 
   <div id="fab-backdrop" onclick="closeFab()" style="display:none;position:absolute;inset:0;z-index:19;background:rgba(0,0,0,0.35);border-radius:40px;"></div>
   <div class="fab-group" id="fab-group">
+    <!-- Floating search bar above FAB -->
+    <div id="fab-search-bar" style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.18);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1.5px solid rgba(255,255,255,0.3);border-radius:28px;padding:8px 16px;box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:opacity .2s;width:220px;">
+      <span style="font-size:15px;opacity:0.8;">🔍</span>
+      <input id="fab-search-input" placeholder="Search parties, items…" oninput="doFabSearch(this.value)"
+        style="background:none;border:none;outline:none;color:white;font-size:13px;font-weight:500;width:100%;font-family:'Noto Sans',sans-serif;"
+        onfocus="this.placeholder=''" onblur="this.placeholder='Search parties, items…'">
+      <span id="fab-search-clear" onclick="clearFabSearch()" style="cursor:pointer;opacity:0.7;font-size:13px;display:none;">✕</span>
+    </div>
     <div class="fab-mini-group" id="fab-mini">
       <button class="fab-mini" onclick="closeFab();openOverlay('overlay-add-customer')">👤 Add Customer/Supplier</button>
       <button class="fab-mini" id="fab-add-inventory" onclick="closeFab();openOverlay('overlay-add-item')">📦 Add Inventory Item</button>
@@ -2687,6 +2695,7 @@ function renderInventory(filter='') {
         <div style="text-align:right">
           <div style="font-family:'Baloo 2',cursive;font-weight:800;font-size:16px;color:var(--primary)">${fmt(i.price)}</div>
           ${i.buyPrice ? `<div style="font-size:11px;color:var(--text3);">🛒 ${fmt(i.buyPrice)} | 💰 +${fmt(i.price-i.buyPrice)}</div>` : ""}
+          <div style="font-size:11px;color:var(--text2);font-weight:600;margin-top:1px;">💵 ${fmt(i.price * (i.stock||0))}</div>
           <div class="${i.stock===0?'stock-low':i.stock<5?'stock-low':'stock-ok'}">${i.stock===0?'⛔ Out':i.stock<5?`⚠️ Low(${i.stock})`:`✓ ${i.stock}`}</div>
         </div>
       </div>
@@ -3213,7 +3222,7 @@ function renderSale() {
             <span class="qty-num" id="qty-${p.id}">${saleQtys[p.id]||0}</span>
             <button class="qty-btn qty-plus" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation();changeQty(${p.id},1)" ${(p.stock||0)===0?'disabled style="opacity:.4"':''}>＋</button>
           </div>
-          <div id="stock-${p.id}" style="font-size:10px;font-weight:600;text-align:right;margin-top:4px;color:${(p.stock||0)===0?'#ef4444':(p.stock||0)<=5?'#f59e0b':'#22c55e'};">${(p.stock||0)===0?'❌ Stock nahi':'📦 Stock: '+((p.stock||0)-(saleQtys[p.id]||0))}</div>
+          <div id="stock-${p.id}" style="font-size:10px;font-weight:600;text-align:right;margin-top:4px;color:${(p.stock||0)===0?'#ef4444':(p.stock||0)<=5?'#f59e0b':'#22c55e'};">${(p.stock||0)===0?'❌ Stock nahi':(saleQtys[p.id]||0)>0?((p.stock||0)-(saleQtys[p.id]||0))+' bachega (save ke baad)':'📦 Stock: '+(p.stock||0)}</div>
           <button ontouchstart="event.stopPropagation()" onclick="event.stopPropagation();editSaleItem(${p.id})" style="background:var(--primary-light);color:var(--primary);border:none;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;">✏️ Edit</button>
         </div>
       </div>`;
@@ -3436,6 +3445,7 @@ function removeCustomItem(id) {
 
 function changeQty(id, d) {
   const item = cd().inventoryItems.find(i => i.id == id);
+  // maxStock = actual current stock in inventory (NOT reduced by sale qty yet — deduction happens on save)
   const maxStock = item ? (item.stock || 0) : 9999;
   const cur = saleQtys[id] || 0;
   const next = Math.max(0, cur + d);
@@ -3445,12 +3455,17 @@ function changeQty(id, d) {
   saleQtys[id] = next;
   const el = document.getElementById('qty-' + id);
   if (el) el.textContent = next;
-  // Color stock indicator
+  // Show remaining stock (original stock minus what's in cart — just for display)
   const stockEl = document.getElementById('stock-' + id);
   if (stockEl && item) {
     const rem = maxStock - next;
-    stockEl.textContent = rem + ' bache';
-    stockEl.style.color = rem <= 2 ? '#ef4444' : rem <= 5 ? '#f59e0b' : '#16a34a';
+    if (next === 0) {
+      stockEl.textContent = '📦 Stock: ' + maxStock;
+      stockEl.style.color = maxStock === 0 ? '#ef4444' : maxStock <= 5 ? '#f59e0b' : '#22c55e';
+    } else {
+      stockEl.textContent = rem + ' bachega (save ke baad)';
+      stockEl.style.color = rem <= 2 ? '#ef4444' : rem <= 5 ? '#f59e0b' : '#22c55e';
+    }
   }
   updateSaleTotal();
 }
@@ -3798,10 +3813,10 @@ function renderBalanceSummary() {
   const rec = cd().entries.filter(e=>e.balType==='receivable'&&e.balance>0);
   const pay = cd().entries.filter(e=>e.balType==='payable'&&e.balance>0);
   document.getElementById('balance-receivable-list').innerHTML = rec.map(e =>
-    `<div class="txn-item"><div><div class="txn-note">${e.name}</div><div class="txn-date">${e.type}</div></div><div style="font-family:'Baloo 2',cursive;font-weight:700;color:var(--green)">${fmt(e.balance)}</div></div>`
+    `<div class="txn-item"><div><div class="txn-note">${e.name}</div><div class="txn-date">${e.type}</div></div><div style="font-family:'Baloo 2',cursive;font-weight:700;color:var(--red)">${fmt(e.balance)}</div></div>`
   ).join('') || '<div style="color:var(--text3);font-size:13px;padding:8px;">Nothing receivable</div>';
   document.getElementById('balance-payable-list').innerHTML = pay.map(e =>
-    `<div class="txn-item"><div><div class="txn-note">${e.name}</div><div class="txn-date">${e.type}</div></div><div style="font-family:'Baloo 2',cursive;font-weight:700;color:var(--red)">${fmt(e.balance)}</div></div>`
+    `<div class="txn-item"><div><div class="txn-note">${e.name}</div><div class="txn-date">${e.type}</div></div><div style="font-family:'Baloo 2',cursive;font-weight:700;color:var(--green)">${fmt(e.balance)}</div></div>`
   ).join('') || '<div style="color:var(--text3);font-size:13px;padding:8px;">Nothing payable</div>';
 }
 
@@ -3820,6 +3835,13 @@ function closeFab() {
   const bd = document.getElementById('fab-backdrop');
   if (bd) bd.style.display = 'none';
 }
+
+// Close invoice autocomplete on outside click
+document.addEventListener('click', function(e) {
+  const ac = document.getElementById('ig-autocomplete');
+  const bar = document.getElementById('ig-quick-bar');
+  if (ac && bar && !bar.contains(e.target)) ac.style.display = 'none';
+});
 
 // ===== NAVIGATION =====
 function showScreen(id) {
@@ -4060,6 +4082,50 @@ function autoRefresh() {
 }
 
 // ===== SEARCH =====
+function doFabSearch(q) {
+  const clearBtn = document.getElementById('fab-search-clear');
+  if (clearBtn) clearBtn.style.display = q ? 'inline' : 'none';
+  if (!q) {
+    // Restore full list
+    renderEntries();
+    return;
+  }
+  const ql = q.toLowerCase();
+  const all = cd().entries;
+  const filtered = all.filter(e =>
+    (e.name||'').toLowerCase().includes(ql) ||
+    (e.phone||'').toLowerCase().includes(ql) ||
+    (e.type||'').toLowerCase().includes(ql)
+  );
+  const list = document.getElementById('entryList');
+  if (!filtered.length) {
+    list.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text3)"><div style="font-size:36px;">🔍</div><div style="font-size:14px;font-weight:600;margin-top:8px;">Koi result nahi mila</div></div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(e => `
+    <div class="entry-card" onclick="openDetail(${e.id})">
+      <div class="avatar" style="background:${getColor(e.name)}">
+        ${e.photo ? `<img src="${e.photo}" alt="${e.name[0]}">` : `<span>${e.name[0]}</span>`}
+      </div>
+      <div class="entry-info">
+        <div class="entry-name">${e.name}</div>
+        <div class="entry-date">${e.date}</div>
+        <div class="entry-type">${e.type.charAt(0).toUpperCase()+e.type.slice(1)}</div>
+      </div>
+      <div class="entry-amount">
+        <div class="amount ${e.balType}">${fmt(e.balance)}</div>
+        <div class="kind ${e.balType}">${e.balType}</div>
+      </div>
+    </div>`).join('');
+}
+function clearFabSearch() {
+  const inp = document.getElementById('fab-search-input');
+  if (inp) inp.value = '';
+  const clearBtn = document.getElementById('fab-search-clear');
+  if (clearBtn) clearBtn.style.display = 'none';
+  renderEntries();
+}
+
 function doSearch(q) {
   if (!q) { document.getElementById('search-results').innerHTML='<div style="color:var(--text3);font-size:13px;padding:8px;">Start typing…</div>'; return; }
   const ql = q.toLowerCase();
@@ -5002,19 +5068,28 @@ let igItems = [];
 let igItemCnt = 0;
 
 function openInvoiceGenerator() {
-  // Pre-fill seller from shop profile
-  const sp = appState.shopProfile || {};
-  const biz = (businesses||[]).find(b=>b.id===appState.currentBizId)||{};
-  document.getElementById('ig-s-name').value  = sp.name  || biz.name || '';
-  document.getElementById('ig-s-phone').value = sp.phone || biz.phone|| '';
-  document.getElementById('ig-s-gst').value   = sp.gst   || biz.gst  || '';
-  document.getElementById('ig-s-pan').value   = sp.pan   || biz.pan  || '';
-  document.getElementById('ig-s-addr').value  = sp.address|| biz.address||'';
+  // Pre-fill seller from shopProfile (the actual saved profile)
+  const sp = shopProfile || {};
+  document.getElementById('ig-s-name').value  = sp.name    || '';
+  document.getElementById('ig-s-phone').value = sp.phone   || '';
+  document.getElementById('ig-s-gst').value   = sp.gstin   || '';
+  document.getElementById('ig-s-pan').value   = sp.pan     || '';
+  document.getElementById('ig-s-addr').value  = [sp.address, sp.city, sp.state].filter(Boolean).join(', ') || '';
 
-  // Auto invoice number
-  const n = (cd().invoices||[]).length + 1;
-  document.getElementById('ig-inv-num').value = 'INV-' + String(n).padStart(3,'0');
+  // Auto invoice number using prefix from profile
+  const prefix = sp.invPrefix || 'INV';
+  const startNum = parseInt(sp.invNum || '1') || 1;
+  const n = Math.max((cd().invoices||[]).length + 1, startNum);
+  document.getElementById('ig-inv-num').value = prefix + '-' + String(n).padStart(3,'0');
   document.getElementById('ig-inv-date').value = new Date().toISOString().slice(0,10);
+
+  // Pre-set GST type from shop profile
+  const gstTypeMap = { 'cgst': 'cgst_sgst', 'igst': 'igst', 'none': 'none' };
+  const igGstType = gstTypeMap[sp.gstType] || 'cgst_sgst';
+  const igGstEl = document.getElementById('ig-gst-type');
+  if (igGstEl) igGstEl.value = igGstType;
+  const igRateEl = document.getElementById('ig-gst-rate');
+  if (igRateEl) igRateEl.value = sp.gstRate || 18;
 
   // Populate customers
   const sel = document.getElementById('ig-b-select');
@@ -5064,6 +5139,58 @@ function igFromInventory() {
   });
   igRenderItems();
   showToast('📦 '+items.length+' items add ho gaye!');
+}
+
+function igQuickSearch(q) {
+  const ac = document.getElementById('ig-autocomplete');
+  if (!q || q.length < 1) { ac.style.display='none'; return; }
+  const ql = q.toLowerCase();
+  const matches = (cd().inventoryItems||[]).filter(i=>
+    i.name.toLowerCase().includes(ql) || (i.category||'').toLowerCase().includes(ql)
+  ).slice(0,8);
+  if (!matches.length) { ac.style.display='none'; return; }
+  ac.innerHTML = matches.map(i=>`
+    <div onclick="igQuickPick(${i.id})" style="display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;" onmouseover="this.style.background='var(--primary-light)'" onmouseout="this.style.background=''">
+      <div style="font-size:20px;">${i.photo ? `<img src="${i.photo}" style="width:28px;height:28px;object-fit:cover;border-radius:6px;">` : '📦'}</div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:13px;">${i.name}</div>
+        <div style="font-size:11px;color:var(--text3);">${i.category||''} • Stock: ${i.stock||0}</div>
+      </div>
+      <div style="font-weight:800;color:var(--primary);font-family:'Baloo 2',cursive;">${fmt(i.price)}</div>
+    </div>`).join('');
+  ac.style.display = 'block';
+}
+
+function igQuickPick(id) {
+  const item = (cd().inventoryItems||[]).find(i=>i.id===id);
+  if (!item) return;
+  document.getElementById('ig-quick-name').value = item.name;
+  document.getElementById('ig-quick-price').value = item.price||0;
+  document.getElementById('ig-quick-qty').value = 1;
+  document.getElementById('ig-autocomplete').style.display = 'none';
+  // Store invId for later
+  document.getElementById('ig-quick-name').dataset.invId = item.id;
+  document.getElementById('ig-quick-price').focus();
+}
+
+function igQuickAdd() {
+  const nameEl = document.getElementById('ig-quick-name');
+  const name = nameEl.value.trim();
+  const price = parseFloat(document.getElementById('ig-quick-price').value) || 0;
+  const qty = parseInt(document.getElementById('ig-quick-qty').value) || 1;
+  const defRate = parseFloat(document.getElementById('ig-gst-rate').value) || 18;
+  if (!name) { showToast('⚠️ Item naam daalo!'); nameEl.focus(); return; }
+  const invId = nameEl.dataset.invId ? parseInt(nameEl.dataset.invId) : null;
+  igItems.push({ id: ++igItemCnt, invId, name, price, qty, taxRate: defRate, hsn: '', isShip: false });
+  igRenderItems();
+  // Reset quick add bar
+  nameEl.value = '';
+  nameEl.dataset.invId = '';
+  document.getElementById('ig-quick-price').value = '';
+  document.getElementById('ig-quick-qty').value = '1';
+  document.getElementById('ig-autocomplete').style.display = 'none';
+  nameEl.focus();
+  showToast('✅ '+name+' added!');
 }
 
 function igRemoveItem(id) { igItems = igItems.filter(i=>i.id!==id); igRenderItems(); }
@@ -6443,6 +6570,19 @@ const KHATABOOK_IMPORT_DATA = [{"id": 1000000, "name": "Arun Pandit Ji", "type":
     <!-- ITEMS TABLE -->
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;">
       <div style="font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📦 Items</div>
+
+      <!-- QUICK ADD BAR -->
+      <div style="display:flex;gap:6px;margin-bottom:10px;position:relative;" id="ig-quick-bar">
+        <div style="flex:2;position:relative;">
+          <input id="ig-quick-name" class="form-input" style="margin:0;" placeholder="🔍 Item naam likho ya inventory se chunno…"
+            oninput="igQuickSearch(this.value)" autocomplete="off">
+          <div id="ig-autocomplete" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid var(--primary);border-radius:10px;z-index:100;max-height:180px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.15);margin-top:2px;"></div>
+        </div>
+        <input id="ig-quick-price" class="form-input" style="margin:0;width:80px;" placeholder="₹ Price" type="number" min="0">
+        <input id="ig-quick-qty" class="form-input" style="margin:0;width:60px;" placeholder="Qty" type="number" min="1" value="1">
+        <button onclick="igQuickAdd()" style="padding:10px 14px;background:var(--primary);color:white;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap;font-family:'Baloo 2',cursive;">＋ Add</button>
+      </div>
+
       <div style="overflow-x:auto;">
         <table style="width:100%;border-collapse:collapse;font-size:11px;" id="ig-items-tbl">
           <thead><tr style="background:var(--primary);color:white;">
@@ -6460,9 +6600,8 @@ const KHATABOOK_IMPORT_DATA = [{"id": 1000000, "name": "Arun Pandit Ji", "type":
         </table>
       </div>
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-        <button onclick="igAddItem()" style="flex:1;min-width:80px;padding:9px;background:var(--primary);color:white;border:none;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;font-family:'Baloo 2',cursive;">＋ Add Item</button>
         <button onclick="igAddShipping()" style="flex:1;min-width:80px;padding:9px;background:#dbeafe;color:#2563EB;border:1px solid #2563EB;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;font-family:'Baloo 2',cursive;">🚚 Shipping</button>
-        <button onclick="igFromInventory()" style="flex:1;min-width:80px;padding:9px;background:#dcfce7;color:#16a34a;border:1px solid #16a34a;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;font-family:'Baloo 2',cursive;">📦 Inventory</button>
+        <button onclick="igFromInventory()" style="flex:1;min-width:80px;padding:9px;background:#dcfce7;color:#16a34a;border:1px solid #16a34a;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;font-family:'Baloo 2',cursive;">📦 All Inventory</button>
       </div>
     </div>
 
