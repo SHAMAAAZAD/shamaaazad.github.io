@@ -8,6 +8,60 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ShopKeeper">
 <meta name="theme-color" content="#2563EB">
+<!-- PWA Inline Manifest — no external file needed -->
+<link id="pwa-manifest" rel="manifest" href="#">
+<script>
+(function(){
+  function makeIcon(size){
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const ctx = c.getContext('2d');
+    const g = ctx.createLinearGradient(0,0,size,size);
+    g.addColorStop(0,'#1d4ed8'); g.addColorStop(1,'#2563eb');
+    ctx.fillStyle = g;
+    const r = size * 0.18;
+    ctx.beginPath();
+    ctx.moveTo(r,0); ctx.lineTo(size-r,0);
+    ctx.quadraticCurveTo(size,0,size,r);
+    ctx.lineTo(size,size-r);
+    ctx.quadraticCurveTo(size,size,size-r,size);
+    ctx.lineTo(r,size); ctx.quadraticCurveTo(0,size,0,size-r);
+    ctx.lineTo(0,r); ctx.quadraticCurveTo(0,0,r,0);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.font=`bold ${size*0.42}px Arial`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('🛒',size/2,size/2);
+    return c.toDataURL('image/png');
+  }
+  window.addEventListener('DOMContentLoaded',function(){
+    const icons=[192,512].map(sz=>({
+      src:makeIcon(sz), sizes:sz+'x'+sz,
+      type:'image/png', purpose:'any maskable'
+    }));
+    const manifest={
+      name:'ShopKeeper',
+      short_name:'ShopKeeper',
+      description:'Smart shop management — sales, inventory & ledger',
+      start_url:'./',
+      scope:'./',
+      display:'standalone',
+      orientation:'portrait-primary',
+      background_color:'#1d4ed8',
+      theme_color:'#2563EB',
+      lang:'en',
+      icons,
+      categories:['finance','productivity','business'],
+      shortcuts:[
+        {name:'New Sale',short_name:'Sale',url:'./#sale',description:'Record a sale'},
+        {name:'Inventory',short_name:'Stock',url:'./#inventory',description:'View stock'}
+      ]
+    };
+    const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});
+    document.getElementById('pwa-manifest').href=URL.createObjectURL(blob);
+  });
+})();
+</script>
 <title>SHOPKEEPER</title>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Noto+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Noto+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"></noscript>
@@ -6617,5 +6671,203 @@ const KHATABOOK_IMPORT_DATA = [{"id": 1000000, "name": "Arun Pandit Ji", "type":
     </div>
   </div>
 </div>
+<!-- ===================== PWA ENGINE ===================== -->
+<script>
+(function(){
+'use strict';
+
+// ── 1. SERVICE WORKER (inline blob — no external sw.js needed) ──────────────
+if('serviceWorker' in navigator){
+  const swCode = `
+const CACHE = 'shopkeeper-v2';
+const PRECACHE = [
+  'https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Noto+Sans:wght@300;400;500;600&display=swap'
+];
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll(PRECACHE).catch(()=>{}))
+    .then(() => self.skipWaiting())
+  );
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))
+    ).then(()=>self.clients.claim())
+  );
+});
+self.addEventListener('fetch', e => {
+  if(e.request.method!=='GET') return;
+  if(e.request.url.includes('firebaseio')||e.request.url.includes('firebase')) return;
+  e.respondWith(
+    caches.match(e.request).then(cached=>{
+      if(cached) return cached;
+      return fetch(e.request).then(res=>{
+        if(res&&res.status===200&&res.type==='basic'){
+          const clone=res.clone();
+          caches.open(CACHE).then(c=>c.put(e.request,clone));
+        }
+        return res;
+      }).catch(()=>cached||new Response('Offline',{status:503}));
+    })
+  );
+});
+`;
+  const blob = new Blob([swCode],{type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(blob),{scope:'./'})
+    .then(reg=>{
+      console.log('[PWA] SW registered ✓');
+      reg.addEventListener('updatefound',()=>{
+        const nw=reg.installing;
+        nw.addEventListener('statechange',()=>{
+          if(nw.state==='installed'&&navigator.serviceWorker.controller)
+            pwaToast('🔄 Update available — refresh karein',4000);
+        });
+      });
+    })
+    .catch(e=>console.warn('[PWA] SW failed:',e));
+}
+
+// ── 2. INSTALL PROMPT (Android Chrome) ─────────────────────────────────────
+let deferredPrompt=null, installBanner=null;
+
+function createInstallBanner(){
+  if(installBanner) return;
+  installBanner=document.createElement('div');
+  installBanner.id='pwa-install-banner';
+  installBanner.innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+      <span style="font-size:24px;flex-shrink:0">🛒</span>
+      <div style="min-width:0">
+        <div style="font-weight:700;font-size:13px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">ShopKeeper</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.78)">App ki tarah install karein — fast & offline</div>
+      </div>
+    </div>
+    <button id="pwa-install-btn" style="background:#fff;color:#1d4ed8;border:none;border-radius:8px;padding:8px 14px;font-weight:700;font-size:12px;cursor:pointer;flex-shrink:0;font-family:'Baloo 2',sans-serif">Install करें</button>
+    <button id="pwa-dismiss-btn" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:8px;padding:8px 10px;font-size:13px;cursor:pointer;flex-shrink:0;line-height:1">✕</button>
+  `;
+  Object.assign(installBanner.style,{
+    position:'fixed',bottom:'16px',left:'12px',right:'12px',
+    background:'linear-gradient(135deg,#1e40af,#2563eb)',
+    borderRadius:'14px',padding:'12px 14px',
+    display:'flex',alignItems:'center',gap:'10px',
+    zIndex:'99999',boxShadow:'0 8px 32px rgba(37,99,235,.5)',
+    transform:'translateY(120px)',transition:'transform .4s cubic-bezier(.34,1.56,.64,1)',
+    maxWidth:'480px',margin:'0 auto'
+  });
+  document.body.appendChild(installBanner);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    installBanner.style.transform='translateY(0)';
+  }));
+  document.getElementById('pwa-install-btn').onclick=async function(){
+    if(!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const {outcome}=await deferredPrompt.userChoice;
+    deferredPrompt=null; dismissBanner();
+    if(outcome==='accepted') pwaToast('✅ ShopKeeper install ho rahi hai!',3000);
+  };
+  document.getElementById('pwa-dismiss-btn').onclick=function(){
+    dismissBanner();
+    sessionStorage.setItem('pwa-dismissed','1');
+  };
+}
+
+function dismissBanner(){
+  if(!installBanner) return;
+  installBanner.style.transform='translateY(120px)';
+  setTimeout(()=>{installBanner&&installBanner.remove();installBanner=null;},400);
+}
+
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault();
+  deferredPrompt=e;
+  if(!sessionStorage.getItem('pwa-dismissed')&&
+     !window.matchMedia('(display-mode: standalone)').matches){
+    setTimeout(createInstallBanner, 2500);
+  }
+});
+
+window.addEventListener('appinstalled',function(){
+  pwaToast('🎉 ShopKeeper install ho gaya!',4000);
+  dismissBanner(); deferredPrompt=null;
+});
+
+// ── 3. iOS INSTALL HINT ────────────────────────────────────────────────────
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone;
+if(isIOS&&!isStandalone&&!sessionStorage.getItem('ios-hint-shown')){
+  setTimeout(function(){
+    sessionStorage.setItem('ios-hint-shown','1');
+    const hint=document.createElement('div');
+    hint.innerHTML=`
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <span style="font-size:28px;flex-shrink:0">📲</span>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:13px;color:#fff;margin-bottom:5px">iPhone pe install karein</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.85);line-height:1.6">
+            Neeche <strong style="background:rgba(255,255,255,.2);padding:1px 6px;border-radius:4px">Share ⬆️</strong> tap karein,
+            phir <strong style="background:rgba(255,255,255,.2);padding:1px 6px;border-radius:4px">Add to Home Screen</strong> chunein
+          </div>
+        </div>
+        <button onclick="this.closest('#ios-pwa-hint').remove()" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:6px;padding:4px 9px;cursor:pointer;font-size:14px;line-height:1">✕</button>
+      </div>
+    `;
+    hint.id='ios-pwa-hint';
+    Object.assign(hint.style,{
+      position:'fixed',bottom:'16px',left:'12px',right:'12px',
+      background:'linear-gradient(135deg,#0f172a,#1e3a8a)',
+      borderRadius:'14px',padding:'14px',
+      border:'1.5px solid rgba(255,255,255,.15)',
+      zIndex:'99999',boxShadow:'0 8px 32px rgba(0,0,0,.4)',
+      maxWidth:'480px',
+      transform:'translateY(120px)',transition:'transform .4s cubic-bezier(.34,1.56,.64,1)'
+    });
+    document.body.appendChild(hint);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{hint.style.transform='translateY(0)';}));
+    setTimeout(()=>{hint.style.transform='translateY(120px)';setTimeout(()=>hint.remove(),400);},8000);
+  },3000);
+}
+
+// ── 4. STANDALONE MODE TWEAKS ──────────────────────────────────────────────
+if(isStandalone){
+  document.body.classList.add('pwa-standalone');
+  window.addEventListener('keydown',function(e){
+    if(e.key==='Backspace'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))
+      e.preventDefault();
+  });
+}
+
+// ── 5. NETWORK STATUS TOAST ────────────────────────────────────────────────
+function pwaToast(msg, duration){
+  const t=document.createElement('div');
+  t.textContent=msg;
+  Object.assign(t.style,{
+    position:'fixed',bottom:'80px',left:'50%',
+    transform:'translateX(-50%) translateY(20px)',
+    background:'#1e293b',color:'#fff',
+    padding:'10px 18px',borderRadius:'10px',
+    fontSize:'13px',fontWeight:'600',
+    zIndex:'99999',opacity:'0',
+    transition:'all .3s',whiteSpace:'nowrap',
+    boxShadow:'0 4px 20px rgba(0,0,0,.3)',
+    fontFamily:"'Baloo 2',sans-serif"
+  });
+  document.body.appendChild(t);
+  requestAnimationFrame(()=>{
+    t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';
+  });
+  setTimeout(()=>{
+    t.style.opacity='0';
+    setTimeout(()=>t.remove(),300);
+  },duration||3000);
+}
+
+window.addEventListener('online', ()=>pwaToast('🟢 Internet connected',2000));
+window.addEventListener('offline',()=>pwaToast('🔴 No internet — offline mode',3000));
+
+})();
+</script>
+<!-- ==================== END PWA ENGINE ===================== -->
+
 </body>
 </html>
