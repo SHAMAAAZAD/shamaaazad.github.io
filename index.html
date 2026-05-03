@@ -749,7 +749,7 @@ function _mergeCloud(d) {
       <div class="detail-sub" id="detail-sub"></div>
     </div>
     <div>
-      <button class="back-btn" onclick="goHome()">←</button>
+      <button class="back-btn" onclick="goBack()">←</button>
       <div class="detail-balance" id="detail-balance" style="margin-top:6px;"></div>
     </div>
   </div>
@@ -780,7 +780,7 @@ function _mergeCloud(d) {
 <!-- CASHBOOK -->
 <div class="screen" id="screen-cashbook">
   <div class="detail-topbar">
-    <button class="back-btn" onclick="goHome()">←</button>
+    <button class="back-btn" onclick="goBack()">←</button>
     <div><div class="detail-name">Cashbook</div></div>
     <button class="add-btn" style="margin-left:auto;" onclick="openOverlay('overlay-add-txn')">＋ Add Entry</button>
   </div>
@@ -812,7 +812,7 @@ function _mergeCloud(d) {
 <!-- INVENTORY -->
 <div class="screen" id="screen-inventory">
   <div class="detail-topbar">
-    <button class="back-btn" onclick="goHome()">←</button>
+    <button class="back-btn" onclick="goBack()">←</button>
     <div><div class="detail-name">Inventory</div></div>
     <button class="add-btn" style="margin-left:auto;" onclick="openOverlay('overlay-add-item')">＋ Add Item</button>
   </div>
@@ -841,7 +841,7 @@ function _mergeCloud(d) {
 <!-- INVOICES -->
 <div class="screen" id="screen-invoices">
   <div class="detail-topbar">
-    <button class="back-btn" onclick="goHome()">←</button>
+    <button class="back-btn" onclick="goBack()">←</button>
     <div><div class="detail-name">Invoices</div></div>
     <button class="add-btn" style="margin-left:auto;" onclick="openInvoiceGenerator()">🧾 New Invoice</button>
   </div>
@@ -865,7 +865,7 @@ function _mergeCloud(d) {
 <!-- PAYROLL -->
 <div class="screen" id="screen-payroll">
   <div class="detail-topbar">
-    <button class="back-btn" onclick="goHome()">←</button>
+    <button class="back-btn" onclick="goBack()">←</button>
     <div><div class="detail-name">Payroll</div></div>
     <button class="add-btn" style="margin-left:auto;" onclick="openOverlay('overlay-add-employee')">＋ Add</button>
   </div>
@@ -895,7 +895,7 @@ function _mergeCloud(d) {
 <!-- EXPENSES -->
 <div class="screen" id="screen-expenses">
   <div class="detail-topbar">
-    <button class="back-btn" onclick="goHome()">←</button>
+    <button class="back-btn" onclick="goBack()">←</button>
     <div><div class="detail-name">Expenses</div></div>
     <button class="add-btn" style="margin-left:auto;" onclick="openOverlay('overlay-add-expense')">＋ Add</button>
   </div>
@@ -919,7 +919,7 @@ function _mergeCloud(d) {
 <!-- SALE -->
 <div class="screen" id="screen-sale">
   <div class="detail-topbar">
-    <button class="back-btn" onclick="goHome()">←</button>
+    <button class="back-btn" onclick="goBack()">←</button>
     <div><div class="detail-name">New Sale</div></div>
   </div>
   <div style="padding:12px 14px;background:var(--surface);border-bottom:1px solid var(--border);">
@@ -947,7 +947,7 @@ function _mergeCloud(d) {
   </div>
   <div class="bottom-bar">
     <button class="bar-item active" style="flex:2;background:rgba(255,255,255,.2);color:white;" onclick="saveSaleAsInvoice()">💾 Save as Invoice</button>
-    <button class="bar-item" onclick="goHome()">❌ Cancel</button>
+    <button class="bar-item" onclick="goBack()">❌ Cancel</button>
   </div>
 </div>
 
@@ -1005,7 +1005,7 @@ function _mergeCloud(d) {
 <!-- SETTINGS -->
 <div class="screen" id="screen-settings">
   <div class="detail-topbar">
-    <button class="back-btn" onclick="goHome()">←</button>
+    <button class="back-btn" onclick="goBack()">←</button>
     <div><div class="detail-name">Settings</div></div>
   </div>
   <div class="inner-screen">
@@ -1049,7 +1049,7 @@ function _mergeCloud(d) {
 <div class="screen" id="screen-shop-profile">
   <div style="background:linear-gradient(135deg,#1e3a5f,var(--primary));color:white;padding:40px 16px 20px;flex-shrink:0;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button class="back-btn" onclick="goHome()">←</button>
+      <button class="back-btn" onclick="goBack()">←</button>
       <div style="flex:1;">
         <div style="font-family:'Baloo 2',cursive;font-size:20px;font-weight:800;">🏪 Shop Profile</div>
         <div style="font-size:12px;opacity:.8;margin-top:2px;">Aapki dukaan ki sabhi details</div>
@@ -1157,7 +1157,7 @@ function _mergeCloud(d) {
       <button onclick="closeInvoiceView()" style="background:rgba(255,255,255,.15);border:none;color:white;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;">← Back</button>
       <div style="font-family:'Baloo 2',cursive;font-size:14px;font-weight:800;color:white;flex:1;">🧾 Invoice Preview</div>
       <button onclick="printInvoiceScreen()" style="background:#f59e0b;border:none;color:#1e293b;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;">🖨️ PDF</button>
-      <button onclick="whatsappInvoiceScreen()" style="background:#25D366;border:none;color:white;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;">💬 WA</button>
+      <button onclick="openInvoiceShareModal()" style="background:#25D366;border:none;color:white;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;">📤 Share</button>
     </div>
     <!-- GST Toggle -->
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
@@ -1176,6 +1176,45 @@ function _mergeCloud(d) {
   <div style="flex:1;overflow-y:auto;background:#e8eef7;" id="inv-doc-scroll">
     <div style="padding:12px;" id="inv-doc-wrap">
       <!-- Invoice rendered here by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- INVOICE SHARE OPTIONS MODAL -->
+<div class="overlay" id="overlay-invoice-share-opts" onclick="closeOverlay(event,'overlay-invoice-share-opts')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📤 Bill Share Karein</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px;">Kaise share karna hai chunein:</div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button onclick="closeById('overlay-invoice-share-opts');whatsappInvoiceAsPDF()" style="display:flex;align-items:center;gap:14px;background:var(--red-light);border:none;border-radius:14px;padding:16px;cursor:pointer;text-align:left;width:100%;">
+        <span style="font-size:28px;">📄</span>
+        <div>
+          <div style="font-family:'Baloo 2',cursive;font-size:15px;font-weight:700;color:var(--red);">PDF Format</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px;">Print-quality PDF — browser se download/share</div>
+        </div>
+      </button>
+
+      <button onclick="closeById('overlay-invoice-share-opts');shareInvoiceAsImage()" style="display:flex;align-items:center;gap:14px;background:var(--green-light);border:none;border-radius:14px;padding:16px;cursor:pointer;text-align:left;width:100%;">
+        <span style="font-size:28px;">🖼️</span>
+        <div>
+          <div style="font-family:'Baloo 2',cursive;font-size:15px;font-weight:700;color:var(--green);">Image Format (JPG)</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px;">WhatsApp pe seedha image share karein</div>
+        </div>
+      </button>
+
+      <button onclick="closeById('overlay-invoice-share-opts');whatsappInvoiceScreen()" style="display:flex;align-items:center;gap:14px;background:#dcfce7;border:none;border-radius:14px;padding:16px;cursor:pointer;text-align:left;width:100%;">
+        <span style="font-size:28px;">💬</span>
+        <div>
+          <div style="font-family:'Baloo 2',cursive;font-size:15px;font-weight:700;color:#16a34a;">WhatsApp Text</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px;">Bill ki details text mein WhatsApp pe bhejein</div>
+        </div>
+      </button>
+    </div>
+
+    <div class="btn-row" style="margin-top:14px;">
+      <button class="btn btn-ghost" onclick="closeById('overlay-invoice-share-opts')">Cancel</button>
     </div>
   </div>
 </div>
@@ -2563,7 +2602,7 @@ function openDetail(id) {
     <span style="font-size:12px;color:var(--text2);font-weight:600;">Net Balance:</span>
     <span style="font-family:'Baloo 2',cursive;font-weight:800;font-size:14px;color:${net>=0?'var(--green)':'var(--red)'}">${fmt(Math.abs(net))} ${net>=0?'receivable':'payable'}</span>`;
   renderDetailTxns();
-  showScreen('detail');
+  navigateTo('detail');
 }
 
 function renderDetailTxns() {
@@ -3897,15 +3936,93 @@ document.addEventListener('click', function(e) {
   if (ac && bar && !bar.contains(e.target)) ac.style.display = 'none';
 });
 
-// ===== NAVIGATION =====
+// ===== NAVIGATION WITH HISTORY STACK =====
+let _navHistory = []; // screen history stack
+let _backPressCount = 0;
+let _backPressTimer = null;
+
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-'+id)?.classList.add('active');
 }
-function goHome() { showScreen('home'); closeFab(); }
+
+function goHome() {
+  _navHistory = []; // reset history when explicitly going home
+  showScreen('home');
+  closeFab();
+}
+
+function navigateTo(id) {
+  // Push current active screen to history before switching
+  const activeScreen = document.querySelector('.screen.active');
+  if (activeScreen) {
+    const curId = activeScreen.id.replace('screen-','');
+    if (curId !== id) {
+      _navHistory.push(curId);
+      // Max history depth
+      if (_navHistory.length > 20) _navHistory.shift();
+    }
+  }
+  showScreen(id);
+}
+
+function goBack() {
+  // Close any open overlay first
+  if (document.querySelector('.overlay.open')) {
+    closeAllOverlays();
+    return;
+  }
+  const activeScreen = document.querySelector('.screen.active');
+  const curId = activeScreen ? activeScreen.id.replace('screen-','') : 'home';
+
+  if (curId === 'home') {
+    // On home screen: double-press back to exit
+    _backPressCount++;
+    if (_backPressCount === 1) {
+      showToast('⬅️ Ek baar aur dabao app band ho jaayegi');
+      _backPressTimer = setTimeout(() => { _backPressCount = 0; }, 2500);
+    } else if (_backPressCount >= 2) {
+      clearTimeout(_backPressTimer);
+      _backPressCount = 0;
+      // Try to close the app (works in Android PWA)
+      if (window.navigator && window.navigator.app) {
+        window.navigator.app.exitApp();
+      } else {
+        window.close();
+      }
+    }
+    return;
+  }
+
+  // Go back one step in history
+  if (_navHistory.length > 0) {
+    const prevId = _navHistory.pop();
+    showScreen(prevId);
+  } else {
+    // No history, go home
+    showScreen('home');
+    closeFab();
+  }
+}
+
+// Android hardware back button support
+document.addEventListener('backbutton', function(e) {
+  e.preventDefault();
+  goBack();
+}, false);
+
+// Browser back button support
+window.addEventListener('popstate', function(e) {
+  e.preventDefault();
+  goBack();
+});
+
+// Push initial state so popstate fires on back
+if (window.history && window.history.pushState) {
+  window.history.pushState({ page: 'app' }, '', window.location.href);
+}
 
 function dsbNav(id) {
-  // Update sidebar active state
   document.querySelectorAll('#desktop-sidebar .dsb-item').forEach(b => b.classList.remove('active'));
   const btn = document.getElementById('dsb-' + id);
   if (btn) btn.classList.add('active');
@@ -3918,7 +4035,6 @@ function updateDsbActive(id) {
 }
 
 function showNavScreen(id) {
-  // Rights check before showing screen
   const user = appState.loggedInUser;
   const isAdmin = !user || user.role === 'admin';
   const r = (user && user.rights) || {};
@@ -3936,7 +4052,7 @@ function showNavScreen(id) {
     showToast('🚫 Aapko yeh section access karne ki permission nahi hai!');
     return;
   }
-  closeAllOverlays(); closeFab(); showScreen(id);
+  closeAllOverlays(); closeFab(); navigateTo(id);
 }
 
 // ===== OVERLAYS =====
@@ -4720,11 +4836,11 @@ function openInvoiceView() {
   updateInvChips();
 
   // Show screen
-  showScreen('invoice-view');
+  navigateTo('invoice-view');
 }
 
 function closeInvoiceView() {
-  showScreen('detail');
+  goBack();
 }
 
 function setInvGST(type) {
@@ -4796,7 +4912,7 @@ function renderInvoiceDoc() {
 
   // Build Amazon-style invoice HTML
   const html = `
-  <div style="font-family:Arial,sans-serif;font-size:12px;color:#000;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.15);" id="inv-printable-doc">
+  <div style="font-family:Arial,sans-serif;font-size:12px;color:#000;background:#fff;border-radius:8px;overflow:visible;box-shadow:0 4px 20px rgba(0,0,0,.15);width:100%;box-sizing:border-box;" id="inv-printable-doc">
 
     <!-- HEADER: LOGO + TITLE -->
     <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:16px 16px 12px;border-bottom:2px solid #1e293b;background:#fff;">
@@ -4850,19 +4966,32 @@ function renderInvoiceDoc() {
     </div>
 
     <!-- ITEMS TABLE -->
-    <table style="width:100%;border-collapse:collapse;font-size:11px;">
+    <div style="width:100%;overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed;">
+      <colgroup>
+        <col style="width:24px;">
+        <col style="width:auto;">
+        <col style="width:58px;">
+        <col style="width:56px;">
+        ${useGST ? `
+        <col style="width:36px;">
+        <col style="width:36px;">
+        <col style="width:46px;">
+        ` : ''}
+        <col style="width:52px;">
+      </colgroup>
       <thead>
         <tr style="background:#1e293b;color:#fff;">
-          <th style="padding:7px 6px;border:1px solid #334155;width:28px;text-align:center;">Sl.<br>No</th>
-          <th style="padding:7px 6px;border:1px solid #334155;text-align:left;">Description</th>
-          <th style="padding:7px 6px;border:1px solid #334155;width:68px;text-align:left;">Date</th>
-          <th style="padding:7px 6px;border:1px solid #334155;width:72px;text-align:right;">Amount (₹)</th>
+          <th style="padding:6px 4px;border:1px solid #334155;text-align:center;word-break:keep-all;">Sl.<br>No</th>
+          <th style="padding:6px 4px;border:1px solid #334155;text-align:left;">Description</th>
+          <th style="padding:6px 4px;border:1px solid #334155;text-align:left;">Date</th>
+          <th style="padding:6px 4px;border:1px solid #334155;text-align:right;">Amt<br>(₹)</th>
           ${useGST ? `
-          <th style="padding:7px 6px;border:1px solid #334155;width:42px;text-align:center;">Tax Rate</th>
-          <th style="padding:7px 6px;border:1px solid #334155;width:48px;text-align:center;">Tax Type</th>
-          <th style="padding:7px 6px;border:1px solid #334155;width:68px;text-align:right;">Tax Amt (₹)</th>
+          <th style="padding:6px 4px;border:1px solid #334155;text-align:center;">Tax<br>Rate</th>
+          <th style="padding:6px 4px;border:1px solid #334155;text-align:center;">Tax<br>Type</th>
+          <th style="padding:6px 4px;border:1px solid #334155;text-align:right;">Tax<br>Amt(₹)</th>
           ` : ''}
-          <th style="padding:7px 6px;border:1px solid #334155;width:78px;text-align:right;">Total (₹)</th>
+          <th style="padding:6px 4px;border:1px solid #334155;text-align:right;">Total<br>(₹)</th>
         </tr>
       </thead>
       <tbody>
@@ -4870,42 +4999,39 @@ function renderInvoiceDoc() {
           const taxAmt = useGST ? Math.round(t.amount * gstRate / 100 * 100) / 100 : 0;
           const rowTotal = t.amount + taxAmt;
           const halfTax = Math.round(taxAmt / 2 * 100) / 100;
+          const bg = i%2===0 ? '#fff' : '#f9fbff';
+          const tdBase = `padding:5px 4px;border:1px solid #ddd;font-size:10px;`;
           if (useGST && gstType === 'cgst') {
             return `
-            <tr style="background:${i%2===0?'#fff':'#f9fbff'};">
-              <td style="padding:6px;border:1px solid #ddd;text-align:center;" rowspan="2">${i+1}</td>
-              <td style="padding:6px;border:1px solid #ddd;" rowspan="2">
-                <strong>${t.note}</strong>
-                <div style="font-size:9.5px;color:#888;margin-top:1px;">${t.type==='receivable'?'Received':'Paid'}</div>
+            <tr style="background:${bg};">
+              <td style="${tdBase}text-align:center;">${i+1}</td>
+              <td style="${tdBase}"><strong style="font-size:10px;">${t.note}</strong><div style="font-size:9px;color:#888;">${t.type==='receivable'?'Rcvd':'Paid'}</div></td>
+              <td style="${tdBase}">${t.date}</td>
+              <td style="${tdBase}text-align:right;">₹${fmtN(t.amount)}</td>
+              <td style="${tdBase}text-align:center;">
+                <div>${gstRate/2}%</div><div style="margin-top:2px;">${gstRate/2}%</div>
               </td>
-              <td style="padding:6px;border:1px solid #ddd;font-size:10px;" rowspan="2">${t.date}</td>
-              <td style="padding:6px;border:1px solid #ddd;text-align:right;" rowspan="2">₹${fmtN(t.amount)}</td>
-              <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;">${gstRate/2}%</td>
-              <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;">CGST</td>
-              <td style="padding:5px 6px;border:1px solid #ddd;text-align:right;">₹${fmtN(halfTax)}</td>
-              <td style="padding:6px;border:1px solid #ddd;text-align:right;" rowspan="2"><strong>₹${fmtN(rowTotal)}</strong></td>
-            </tr>
-            <tr style="background:${i%2===0?'#f0f8ff':'#e8f4ff'};">
-              <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;">${gstRate/2}%</td>
-              <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;">SGST</td>
-              <td style="padding:5px 6px;border:1px solid #ddd;text-align:right;">₹${fmtN(halfTax)}</td>
+              <td style="${tdBase}text-align:center;">
+                <div>CGST</div><div style="margin-top:2px;">SGST</div>
+              </td>
+              <td style="${tdBase}text-align:right;">
+                <div>₹${fmtN(halfTax)}</div><div style="margin-top:2px;">₹${fmtN(halfTax)}</div>
+              </td>
+              <td style="${tdBase}text-align:right;"><strong>₹${fmtN(rowTotal)}</strong></td>
             </tr>`;
           } else {
             return `
-            <tr style="background:${i%2===0?'#fff':'#f9fbff'};">
-              <td style="padding:6px;border:1px solid #ddd;text-align:center;">${i+1}</td>
-              <td style="padding:6px;border:1px solid #ddd;">
-                <strong>${t.note}</strong>
-                <div style="font-size:9.5px;color:#888;margin-top:1px;">${t.type==='receivable'?'Received':'Paid'}</div>
-              </td>
-              <td style="padding:6px;border:1px solid #ddd;font-size:10px;">${t.date}</td>
-              <td style="padding:6px;border:1px solid #ddd;text-align:right;">₹${fmtN(t.amount)}</td>
+            <tr style="background:${bg};">
+              <td style="${tdBase}text-align:center;">${i+1}</td>
+              <td style="${tdBase}"><strong style="font-size:10px;">${t.note}</strong><div style="font-size:9px;color:#888;">${t.type==='receivable'?'Rcvd':'Paid'}</div></td>
+              <td style="${tdBase}">${t.date}</td>
+              <td style="${tdBase}text-align:right;">₹${fmtN(t.amount)}</td>
               ${useGST ? `
-              <td style="padding:6px;border:1px solid #ddd;text-align:center;">${gstRate}%</td>
-              <td style="padding:6px;border:1px solid #ddd;text-align:center;">IGST</td>
-              <td style="padding:6px;border:1px solid #ddd;text-align:right;">₹${fmtN(taxAmt)}</td>
+              <td style="${tdBase}text-align:center;">${gstRate}%</td>
+              <td style="${tdBase}text-align:center;">IGST</td>
+              <td style="${tdBase}text-align:right;">₹${fmtN(taxAmt)}</td>
               ` : ''}
-              <td style="padding:6px;border:1px solid #ddd;text-align:right;"><strong>₹${fmtN(rowTotal)}</strong></td>
+              <td style="${tdBase}text-align:right;"><strong>₹${fmtN(rowTotal)}</strong></td>
             </tr>`;
           }
         }).join('')}
@@ -4916,10 +5042,9 @@ function renderInvoiceDoc() {
         </tr>
       </tbody>
     </table>
-
-    <!-- AMOUNT IN WORDS + TOTALS BOX -->
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:12px 14px;gap:12px;border-top:1px solid #eee;">
-      <div style="flex:1;">
+    </div><!-- end overflow-x wrapper -->
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;padding:12px 14px;gap:10px;border-top:1px solid #eee;">
+      <div style="flex:1;min-width:140px;">
         <div style="border:1px solid #ddd;border-radius:6px;padding:8px 10px;background:#fffbeb;margin-bottom:8px;">
           <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;">Amount in Words :</div>
           <div style="font-size:11px;font-weight:600;line-height:1.4;">${numToWords(Math.round(grandTotal))} Rupees only</div>
@@ -4933,14 +5058,14 @@ function renderInvoiceDoc() {
           ${sp.upi ? `<div style="font-size:11px;">UPI: <strong>${sp.upi}</strong></div>` : ''}
         </div>` : ''}
       </div>
-      <div style="min-width:200px;">
+      <div style="min-width:170px;flex-shrink:0;">
         <table style="width:100%;border-collapse:collapse;font-size:12px;border:1px solid #ccc;border-radius:6px;overflow:hidden;">
-          <tr style="border-bottom:1px solid #eee;"><td style="padding:5px 10px;color:#555;">Taxable Amount</td><td style="padding:5px 10px;text-align:right;">₹${fmtN(subtotal)}</td></tr>
+          <tr style="border-bottom:1px solid #eee;"><td style="padding:5px 8px;color:#555;">Taxable Amount</td><td style="padding:5px 8px;text-align:right;">₹${fmtN(subtotal)}</td></tr>
           ${useGST && gstType==='cgst' ? `
-          <tr style="border-bottom:1px solid #eee;color:#ea580c;"><td style="padding:4px 10px;">CGST (${gstRate/2}%)</td><td style="padding:4px 10px;text-align:right;">₹${fmtN(cgstAmt)}</td></tr>
-          <tr style="border-bottom:1px solid #eee;color:#ea580c;"><td style="padding:4px 10px;">SGST (${gstRate/2}%)</td><td style="padding:4px 10px;text-align:right;">₹${fmtN(sgstAmt)}</td></tr>
+          <tr style="border-bottom:1px solid #eee;color:#ea580c;"><td style="padding:4px 8px;">CGST (${gstRate/2}%)</td><td style="padding:4px 8px;text-align:right;">₹${fmtN(cgstAmt)}</td></tr>
+          <tr style="border-bottom:1px solid #eee;color:#ea580c;"><td style="padding:4px 8px;">SGST (${gstRate/2}%)</td><td style="padding:4px 8px;text-align:right;">₹${fmtN(sgstAmt)}</td></tr>
           ` : useGST ? `
-          <tr style="border-bottom:1px solid #eee;color:#ea580c;"><td style="padding:4px 10px;">IGST (${gstRate}%)</td><td style="padding:4px 10px;text-align:right;">₹${fmtN(igstAmt)}</td></tr>
+          <tr style="border-bottom:1px solid #eee;color:#ea580c;"><td style="padding:4px 8px;">IGST (${gstRate}%)</td><td style="padding:4px 8px;text-align:right;">₹${fmtN(igstAmt)}</td></tr>
           ` : ''}
           <tr style="background:#1e293b;color:#fff;font-weight:700;font-size:13px;"><td style="padding:8px 10px;">GRAND TOTAL</td><td style="padding:8px 10px;text-align:right;">₹${fmtN(grandTotal)}</td></tr>
         </table>
@@ -4948,8 +5073,8 @@ function renderInvoiceDoc() {
     </div>
 
     <!-- SIGNATORY -->
-    <div style="display:flex;justify-content:space-between;align-items:flex-end;padding:10px 14px 14px;border-top:1px solid #eee;">
-      <div style="font-size:10px;color:#666;">Whether tax is payable under reverse charge — No</div>
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;padding:10px 14px 14px;border-top:1px solid #eee;gap:10px;">
+      <div style="font-size:10px;color:#666;flex:1;min-width:140px;">Whether tax is payable under reverse charge — No</div>
       <div style="text-align:center;border:1px solid #ccc;border-radius:6px;padding:8px 18px;min-width:180px;">
         <div style="font-size:11px;font-weight:700;margin-bottom:22px;">For ${sp.name || 'My Shop'} :</div>
         <div style="border-bottom:1px solid #999;width:130px;margin:0 auto 4px;"></div>
@@ -4975,21 +5100,31 @@ function printInvoiceScreen() {
   const content = document.getElementById('inv-printable-doc');
   if (!content) return;
   const d = _invViewData;
-  const sp = shopProfile;
-  const printWin = window.open('', '_blank', 'width=800,height=900');
+  const printWin = window.open('', '_blank', 'width=820,height=1000');
   printWin.document.write(`<html><head><title>Invoice ${d._invNum}</title>
   <style>
-    body{margin:0;padding:20px;font-family:Arial,sans-serif;background:#fff;}
-    @media print{body{padding:0;}}
-    @page{size:A4;margin:15mm;}
-    button{display:none!important;}
-    .no-print{display:none!important;}
+    *{box-sizing:border-box;}
+    body{margin:0;padding:16px;font-family:Arial,sans-serif;background:#fff;}
+    @media print{
+      body{padding:0;margin:0;}
+      .no-print{display:none!important;}
+      button.print-btn{display:none!important;}
+    }
+    @page{size:A4 portrait;margin:10mm;}
+    /* Prevent content overflow */
+    table{width:100%;border-collapse:collapse;table-layout:fixed;word-break:break-word;}
+    td,th{word-break:break-word;overflow-wrap:break-word;}
+    img{max-width:100%;}
+    /* Remove any fixed heights that cause clipping */
+    *{max-height:none!important;overflow:visible!important;}
   </style></head><body>
   ${content.outerHTML}
-  <br><button onclick="window.print()" style="display:block!important;background:#2563EB;color:#fff;border:none;padding:10px 24px;font-size:14px;border-radius:8px;cursor:pointer;margin:10px auto;">🖨️ Print / Save PDF</button>
+  <div style="text-align:center;margin-top:12px;">
+    <button class="print-btn" onclick="window.print()" style="background:#2563EB;color:#fff;border:none;padding:10px 28px;font-size:14px;border-radius:8px;cursor:pointer;">🖨️ Print / Save as PDF</button>
+  </div>
+  <script>window.onload=function(){setTimeout(function(){window.print();},500);}<\/script>
   </body></html>`);
   printWin.document.close();
-  setTimeout(() => printWin.print(), 600);
 }
 
 function whatsappInvoiceScreen() {
@@ -5028,7 +5163,168 @@ _Powered by SHOPKEEPER_`;
   showToast('WhatsApp khul raha hai…');
 }
 
-// ===== SHOP PROFILE FULL SCREEN =====
+// ===== INVOICE SHARE MODAL =====
+function openInvoiceShareModal() {
+  openOverlay('overlay-invoice-share-opts');
+}
+
+// Share as PDF — jsPDF + html2canvas se real PDF banao, phir Web Share API se share karo
+function whatsappInvoiceAsPDF() {
+  const content = document.getElementById('inv-printable-doc');
+  if (!content) { showToast('⚠️ Invoice load nahi hua!'); return; }
+  showToast('📄 PDF bana raha hai…');
+
+  function doGeneratePDF() {
+    // Temporarily expand content so html2canvas captures full height without clipping
+    const prevOverflow = content.style.overflow;
+    const prevMaxH = content.style.maxHeight;
+    content.style.overflow = 'visible';
+    content.style.maxHeight = 'none';
+
+    html2canvas(content, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      windowWidth: content.scrollWidth,
+      windowHeight: content.scrollHeight
+    }).then(function(canvas) {
+      // Restore original styles
+      content.style.overflow = prevOverflow;
+      content.style.maxHeight = prevMaxH;
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageW = pdf.internal.pageSize.getWidth();   // 210mm
+      const pageH = pdf.internal.pageSize.getHeight();  // 297mm
+
+      // Convert canvas px to mm (at 96dpi, 1px = 0.2646mm; we used scale:2 so divide by 2)
+      const pxToMm = 25.4 / 96 / 2;
+      const imgWmm = canvas.width * pxToMm;
+      const imgHmm = canvas.height * pxToMm;
+
+      // Scale image width to fit page width
+      const ratio = pageW / imgWmm;
+      const scaledW = pageW;
+      const scaledH = imgHmm * ratio;
+
+      if (scaledH <= pageH) {
+        // ✅ Fits in one page — no blank second page
+        pdf.addImage(imgData, 'JPEG', 0, 0, scaledW, scaledH);
+      } else {
+        // Long invoice: split across pages properly
+        let yOffset = 0;
+        while (yOffset < scaledH) {
+          if (yOffset > 0) pdf.addPage();
+          pdf.addImage(imgData, 'JPEG', 0, -yOffset, scaledW, scaledH);
+          yOffset += pageH;
+        }
+      }
+      const d = _invViewData;
+      const fileName = 'Invoice_' + (d ? d._invNum : Date.now()) + '.pdf';
+      const pdfBlob = pdf.output('blob');
+
+      // Try Web Share API (Android/mobile)
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([pdfBlob], fileName, { type: 'application/pdf' })] })) {
+        const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+        navigator.share({ title: 'Invoice', files: [file] })
+          .then(() => showToast('✅ PDF share ho gaya!'))
+          .catch(() => {
+            // Fallback: download
+            pdf.save(fileName);
+            showToast('📥 PDF download ho rahi hai');
+          });
+      } else {
+        // Desktop fallback: download
+        pdf.save(fileName);
+        showToast('📥 PDF download ho rahi hai — WhatsApp pe manually share karein');
+      }
+    }).catch(function(err) {
+      console.warn('html2canvas error:', err);
+      showToast('❌ PDF nahi bana, Print option try karein');
+    });
+  }
+
+  // Load dependencies if not present
+  function loadScript(src, cb) {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = cb;
+    s.onerror = function() { showToast('❌ PDF ke liye internet chahiye'); };
+    document.head.appendChild(s);
+  }
+
+  function ensureJsPDF(cb) {
+    if (window.jspdf) { cb(); return; }
+    loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', cb);
+  }
+
+  function ensureHtml2Canvas(cb) {
+    if (typeof html2canvas !== 'undefined') { cb(); return; }
+    loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', cb);
+  }
+
+  ensureHtml2Canvas(function() {
+    ensureJsPDF(function() {
+      doGeneratePDF();
+    });
+  });
+}
+
+// Share as Image — uses html2canvas to convert invoice to JPG and share/download
+function shareInvoiceAsImage() {
+  const content = document.getElementById('inv-printable-doc');
+  if (!content) { showToast('⚠️ Invoice load nahi hua!'); return; }
+
+  showToast('🖼️ Image bana raha hai…');
+
+  // Load html2canvas dynamically if not present
+  function doCapture() {
+    html2canvas(content, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false
+    }).then(function(canvas) {
+      canvas.toBlob(function(blob) {
+        // Try Web Share API (mobile)
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'invoice.jpg', { type: 'image/jpeg' })] })) {
+          const file = new File([blob], 'invoice.jpg', { type: 'image/jpeg' });
+          navigator.share({
+            title: 'Invoice',
+            files: [file]
+          }).catch(() => fallbackDownload(canvas));
+        } else {
+          fallbackDownload(canvas);
+        }
+      }, 'image/jpeg', 0.92);
+    }).catch(function(err) {
+      console.warn('html2canvas error:', err);
+      showToast('❌ Image nahi bani, PDF try karein');
+    });
+  }
+
+  function fallbackDownload(canvas) {
+    const link = document.createElement('a');
+    link.download = 'invoice_' + Date.now() + '.jpg';
+    link.href = canvas.toDataURL('image/jpeg', 0.92);
+    link.click();
+    showToast('📥 Image download ho rahi hai — WhatsApp pe share karein');
+  }
+
+  if (typeof html2canvas !== 'undefined') {
+    doCapture();
+  } else {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    script.onload = doCapture;
+    script.onerror = function() { showToast('❌ Image feature ke liye internet chahiye'); };
+    document.head.appendChild(script);
+  }
+}
+
+
 function openShopProfileFull() {
   const sp = shopProfile;
   // Populate all fields
@@ -5047,7 +5343,7 @@ function openShopProfileFull() {
   // Update header
   const hn = document.getElementById('spf-header-name');
   if (hn) hn.textContent = sp.name || 'My Shop';
-  showScreen('shop-profile');
+  navigateTo('shop-profile');
 }
 
 function saveShopProfileFull() {
